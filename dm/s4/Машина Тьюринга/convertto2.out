@@ -1,0 +1,43 @@
+start: start
+accept: accept
+reject: reject
+blank: _
+
+start 0 -> accept 0 ^
+
+start 1 -> put$ 1 <
+start 2 -> put$ 2 <
+
+put$ _ -> gor $ >
+gor 0 -> gor 0 >
+gor 1 -> gor 1 >
+gor 2 -> gor 2 >
+gor $ -> gor $ >
+gor _ -> dec _ <
+
+dec 2 -> go$ 1 <
+dec 1 -> go$ 0 <
+dec 0 -> dec 2 <
+
+dec $ -> cleanup _ >
+
+go$ 0 -> go$ 0 <
+go$ 1 -> go$ 1 <
+go$ 2 -> go$ 2 <
+
+go$ $ -> inc $ <
+
+inc 0 -> gor 1 >
+inc 1 -> inc 0 <
+inc _ -> gor 1 >
+
+cleanup 0 -> cleanup _ >
+cleanup 1 -> cleanup _ >
+cleanup 2 -> cleanup _ >
+cleanup _ -> finddig _ <
+finddig _ -> finddig _ <
+finddig 0 -> gobeg 0 <
+finddig 1 -> gobeg 1 <
+gobeg 0 -> gobeg 0 <
+gobeg 1 -> gobeg 1 <
+gobeg _ -> accept _ >

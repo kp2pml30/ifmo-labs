@@ -1,0 +1,30 @@
+start: start
+accept: accept
+reject: reject
+blank: _
+
+start 1 -> start 1 >
+start 0 -> start 0 >
+start _ -> find@ @ ^
+
+find@ 0 -> find@ 0 <
+find@ 1 -> find@ 1 <
+find@ @ -> post@ @ <
+
+post@ _ -> preacc _ >
+preacc @ -> accept _ >
+
+post@ 0 -> 0@ @ >
+post@ 1 -> 1@ @ >
+
+0@ @ -> c0 0 >
+1@ @ -> c1 1 >
+
+c0 0 -> c0 0 >
+c1 0 -> c1 0 >
+c0 1 -> c0 1 >
+c1 1 -> c1 1 >
+
+c0 _ -> find@ 0 <
+c1 _ -> find@ 1 <
+

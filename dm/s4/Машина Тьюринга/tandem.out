@@ -1,0 +1,75 @@
+start: start
+accept: accept
+reject: reject
+blank: _
+
+start 1 -> put^' 1 <
+start 0 -> put^' 0 <
+put^' _ -> put^ . <
+put^ _ -> put$' ^ >
+put$' ^ -> put$' ^ >
+put$' . -> put$' . >
+put$' 1 -> put$' 1 >
+put$' 0 -> put$' 0 >
+put$' _ -> put$ . >
+put$ _ -> golf $ <
+
+golf 1 -> golf 1 <
+golf 0 -> golf 0 <
+golf . -> swapl . <
+
+swapl . -> met . ^
+
+swapl 1 -> swapl1 . >
+swapl 0 -> swapl0 . >
+
+swapl1 . -> gols' 1 <
+swapl0 . -> gols' 0 <
+
+gols' . -> gols . <
+
+gols 0 -> gols 0 <
+gols 1 -> gols 1 <
+
+gols . -> swapr . >
+
+swapr . -> met . <
+swapr 0 -> swapr0 . <
+swapr 1 -> swapr1 . <
+
+swapr0 . -> find$ 0 >
+swapr1 . -> find$ 1 >
+
+find$ . -> find$ . >
+find$ 0 -> find$ 0 >
+find$ 1 -> find$ 1 >
+
+find$ $ -> golf $ <
+
+met . -> savebit . <
+savebit 0 -> saved0 . >
+savebit 1 -> saved1 . >
+savebit ^ -> saved^ . >
+saved0 . -> saved0 . >
+saved1 . -> saved1 . >
+saved^ . -> saved^ . >
+saved^ $ -> accept . ^
+
+saved0 0 -> saved0 0 >
+saved0 1 -> saved0 1 >
+saved1 0 -> saved1 0 >
+saved1 1 -> saved1 1 >
+
+saved0 $ -> is0 $ <
+saved1 $ -> is1 $ <
+is0 0 -> searchdots $ <
+is1 1 -> searchdots $ <
+
+searchdots 0 -> searchdots 0 <
+searchdots 1 -> searchdots 1 <
+searchdots . -> skipdots . <
+
+skipdots . -> skipdots . <
+skipdots 1 -> met 1 >
+skipdots 0 -> met 0 >
+skipdots ^ -> met ^ >

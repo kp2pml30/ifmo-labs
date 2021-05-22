@@ -1,0 +1,62 @@
+1
+
+
+
+
+@@()[]01ao^$_
+
+S ~ -> init( ? <
+init( _ -> init^ ( <
+
+init^ _ -> skipAllInit) ^ >
+
+@skipAll Init) init) null ,"~_",">","^"
+init) _ -> init$ ) >
+
+init$ _ -> skipAllFind(^ $ <
+
+# how cycle works: go r->l when meet ( evaluate all `a` int it then eval all `o` in it then remove ) ( and continue
+
+@skipAll Find(^ found(^ null ,"~(^","<","^"
+
+# finish
+found(^ ^ -> skipAll2$ _ >
+@skipAll 2$ rm$ null ,"~$",">","^"
+rm$ $ -> skipAllAnswer _ <
+@skipAll Answer AC null ,"~01","<","^"
+
+found(^ ( -> skipAllA) ? >
+
+@skipAll A) foundA) null ,"~)a",">","^"
+
+foundA) a -> gola _ <
+gola _ -> gola _ <
+
+@[01
+gola . -> gora. _ >
+gora. _ -> gora. _ >
+@]
+
+gora0 01 -> skipAllA) 0 >
+gora1 0 -> skipAllA) 0 >
+gora1 1 -> skipAllA) 1 >
+
+foundA) ) -> skipAllO( ? <
+
+@skipAll O( foundO( null ,"~(o","<","^"
+
+foundO( ( -> skipAllRemove) _ >
+@skipAll Remove) remove) null ,"~)",">","^"
+remove) ) -> skipAllFind(^ _ <
+
+foundO( o -> golo _ <
+golo _ -> golo _ <
+
+@[01
+golo . -> goro. _ >
+goro. _ -> goro. _ >
+@]
+
+goro0 0 -> skipAllO( 0 <
+goro0 1 -> skipAllO( 1 <
+goro1 01 -> skipAllO( 1 <

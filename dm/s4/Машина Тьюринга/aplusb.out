@@ -1,0 +1,39 @@
+start: start
+accept: accept
+reject: reject
+blank: _
+
+start 1 -> find+ 1 ^
+start 0 -> find+ 0 ^
+
+find+ 0 -> find+ 0 >
+find+ 1 -> find+ 1 >
+find+ + -> check0 + >
+
+check0 0 -> check0 0 >
+check0 1 -> findr 1 >
+check0 _ -> cleanup _ <
+
+findr 1 -> findr 1 >
+findr 0 -> findr 0 >
+findr _ -> dec _ <
+
+dec 1 -> addgo 0 <
+dec 0 -> dec 1 <
+
+addgo 0 -> addgo 0 <
+addgo 1 -> addgo 1 <
+addgo + -> inc + <
+
+inc 0 -> find+ 1 >
+inc 1 -> inc 0 <
+inc _ -> find+ 1 >
+
+cleanup 0 -> cleanup _ <
+cleanup 1 -> cleanup _ <
+cleanup + -> finalize _ <
+
+finalize 0 -> finalize 0 <
+finalize 1 -> finalize 1 <
+finalize _ -> accept _ >
+

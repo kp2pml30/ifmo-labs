@@ -1,0 +1,78 @@
+start: start
+accept: accept
+reject: reject
+blank: _
+
+@@_01=*oi
+
+# represent as r=a*b
+
+start 01 -> init= ? <
+init= _ -> init0 = <
+init0 _ -> skipAll* 0 >
+
+@skipAll * check*Bit null ,"~*",">","<"
+
+# right number *= 2
+check*Bit 0 -> skipAllPush * >
+@skipAll Push pusher  null ,"~_",">","^"
+pusher _ -> skipAllLeft* 0 <
+@skipAll Left* skipAllOnly*Left null ,"01","<","^"
+@skipAll Only*Left check*Bit null ,"*","<","^"
+
+# done
+check*Bit = -> cleanup _ >
+cleanup _ -> skipAllseekend _ <
+cleanup ~_ -> cleanup _ >
+@skipAll seekend skipAllseekbeg null ,"_","<","<"
+@skipAll seekbeg chop null ,"01","<",">"
+chop 1 -> accept ? ^
+chop 0 -> chop _ >
+chop _ -> accept 0 ^
+
+# r += b
+# // bit will be divided on next iteration
+check*Bit 1 -> skipAllPutIO 0 <
+# we know that not 01 will be = so just skip it
+@skipAll PutIO putioleft null ,"01","<","<"
+putioleft 0 -> skipAllGoRight+ o >
+putioleft 1 -> skipAllGoRight+ i >
+@skipAll GoRight+ markRight null ,"~_",">","<"
+
+markRight 0 -> doPlusIter o ^
+markRight 1 -> doPlusIter i ^
+
+doPlusIter o -> doPlusIter'o 0 <
+doPlusIter i -> doPlusIter'i 1 <
+
+@[oi
+doPlusIter'. 0 -> carryTo. o <
+doPlusIter'. 1 -> carryTo. i <
+doPlusIter'. * -> carryTo. * <
+carryTo. ~oi_ -> carryTo. ? <
+@]
+
+carryToi _ -> skipAllRightIO 1 >
+carryToi o -> markInLeft 1 <
+carryToi i -> markInLeftCarry 0 <
+markInLeftCarry _0 -> skipAllRightIO i >
+markInLeftCarry 1 -> leftCarry o <
+leftCarry _0 -> skipAllRightIO 1 >
+leftCarry 1 -> leftCarry 0 <
+carryToo _ -> skipAllRightIO 0 >
+carryToo o -> markInLeft 0 <
+carryToo i -> markInLeft 1 <
+
+markInLeft 0 -> skipAllRightIO o >
+markInLeft 1 -> skipAllRightIO i >
+markInLeft _ -> skipAllRightIO _ >
+
+@skipAll RightIO skipAllRightIO' null ,"~*",">",">"
+@skipAll RightIO' checkWent null ,"~io_",">","^"
+checkWent _ -> checkWentRemoveIO _ <
+checkWent io -> doPlusIter ? ^
+checkWentRemoveIO ~_oi -> checkWentRemoveIO ? <
+checkWentRemoveIO _ -> skipAll* ? >
+checkWentRemoveIO o -> skipAll* 0 >
+checkWentRemoveIO i -> skipAll* 1 >
+

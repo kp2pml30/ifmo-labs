@@ -1,0 +1,53 @@
+1
+
+S 0 -> S' 0 <
+S 1 -> S' 1 <
+
+S' _ -> start % >
+
+start 0 -> start 0 >
+start 1 -> start 1 >
+start o -> start o >
+start a -> start a >
+start _ -> gotostart $ <
+
+gotostart 0 -> gotostart 0 <
+gotostart 1 -> gotostart 1 <
+gotostart o -> gotostart o <
+gotostart a -> gotostart a <
+gotostart _ -> findop _ >
+gotostart % -> findop % >
+
+findop _ -> findop _ >
+findop 0 -> findop 0 >
+findop 1 -> findop 1 >
+findop o -> o _ <
+findop a -> a _ <
+
+findop $ -> finalize _ <
+finalize _ -> finalize _ <
+finalize 0 -> %check 0 <
+finalize 1 -> %check 1 <
+%check % -> AC _ >
+
+a _ -> a _ <
+o _ -> o _ <
+a 0 -> a0 _ <
+a 1 -> a1 _ <
+o 0 -> o0 _ <
+o 1 -> o1 _ <
+
+a0 _ -> a0 _ <
+a1 _ -> a1 _ <
+o0 _ -> o0 _ <
+o1 _ -> o1 _ <
+
+a0 0 -> findop 0 >
+a0 1 -> findop 0 >
+a1 0 -> findop 0 >
+a1 1 -> findop 1 >
+
+o0 0 -> findop 0 >
+o0 1 -> findop 1 >
+o1 0 -> findop 1 >
+o1 1 -> findop 1 >

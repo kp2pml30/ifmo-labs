@@ -1,0 +1,44 @@
+start: start
+accept: accept
+reject: reject
+blank: _
+
+start _ -> accept _ ^
+start ( -> marks ( <
+start ) -> marks ) <
+
+marks _ -> marke { >
+marke ( -> marke ( >
+marke ) -> marke ) >
+marke _ -> gol } <
+
+gol _ -> gol _ <
+gol ) -> gol! _ <
+gol! ) -> gol! ) <
+gol! ( -> golw _ <
+gol! _ -> gol! _ <
+golw ) -> gol! _ <
+golw ( -> golw ( <
+golw _ -> golw _ <
+
+
+gor _ -> gor _ >
+gor ( -> gor! _ >
+gor! _ -> gor! _ >
+gor! ( -> gor! ( >
+gor! ) -> gorw _ >
+gorw ) -> gorw ) >
+gorw ( -> gor! _ >
+gorw _ -> gorw _ >
+
+golw { -> gor { >
+gorw } -> gol } <
+
+gol { -> checkr _ >
+gor } -> checkl _ <
+
+checkl _ -> checkl _ <
+checkr _ -> checkr _ >
+
+checkl { -> accept _ ^
+checkr } -> accept _ ^

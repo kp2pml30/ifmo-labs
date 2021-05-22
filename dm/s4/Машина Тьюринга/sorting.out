@@ -1,0 +1,174 @@
+2
+
+S 1 _ -> S 1 > _ >
+S 0 _ -> S 0 > _ >
+S | _ -> BeginCmp | > = >
+
+BeginCmp 1 _ -> BeginCmp 1 > . >
+BeginCmp 0 _ -> BeginCmp 0 > . >
+BeginCmp | _ -> cmpIter | < _ <
+BeginCmp _ _ -> cmpIter _ < _ <
+
+cmpSeek. 0 > -> cmpSeek. 0 > > >
+cmpSeek. 0 < -> cmpSeek. 0 > < >
+cmpSeek. 0 = -> cmpSeek. 0 > = >
+cmpSeek. 0 . -> cmpSeek. 0 > . >
+cmpSeek. 1 > -> cmpSeek. 1 > > >
+cmpSeek. 1 < -> cmpSeek. 1 > < >
+cmpSeek. 1 = -> cmpSeek. 1 > = >
+cmpSeek. 1 . -> cmpSeek. 1 > . >
+cmpSeek. | = -> cmpSeek. | > = >
+
+cmpSeek. 0 _ -> cmpIter 0 < _ <
+cmpSeek. 1 _ -> cmpIter 1 < _ <
+cmpSeek. | _ -> cmpIter 0 < _ <
+
+
+cmpIter 1 . -> cmpCarry1 1 < _ <
+cmpIter 0 . -> cmpCarry0 0 < _ <
+
+cmpCarry1 1 . -> cmpCarry1 1 < . <
+cmpCarry1 1 < -> cmpCarry1 1 < < <
+cmpCarry1 1 > -> cmpCarry1 1 < > <
+cmpCarry1 1 = -> cmpCarry1 1 < = <
+cmpCarry1 1 _ -> cmpSeek. 1 > = >
+cmpCarry1 | = -> cmpCarry1 | < = <
+cmpCarry1 0 . -> cmpCarry1 0 < . <
+cmpCarry1 0 < -> cmpCarry1 0 < < <
+cmpCarry1 0 > -> cmpCarry1 0 > > <
+cmpCarry1 0 = -> cmpCarry1 0 < = <
+cmpCarry1 0 _ -> cmpSeek. 0 > < >
+cmpCarry1 | _ -> cmpSeek. | > < >
+cmpCarry1 _ _ -> cmpSeek. _ > < >
+cmpCarry1 _ < -> cmpSeek. _ > < >
+cmpCarry1 | < -> cmpSeek. | > < >
+
+cmpCarry0 1 . -> cmpCarry0 1 < . <
+cmpCarry0 1 < -> cmpCarry0 1 < < <
+cmpCarry0 1 > -> cmpCarry0 1 < > <
+cmpCarry0 1 = -> cmpCarry0 1 < = <
+cmpCarry0 1 _ -> cmpSeek. 1 > > >
+cmpCarry0 | = -> cmpCarry0 | < = <
+cmpCarry0 0 . -> cmpCarry0 0 < . <
+cmpCarry0 0 < -> cmpCarry0 0 < < <
+cmpCarry0 0 > -> cmpCarry0 0 < > <
+cmpCarry0 0 = -> cmpCarry0 0 < = <
+cmpCarry0 0 _ -> cmpSeek. 0 > = >
+cmpCarry0 | _ -> cmpSeek. | > < >
+cmpCarry0 _ _ -> cmpSeek. _ > < >
+cmpCarry0 _ < -> cmpSeek. _ > < >
+cmpCarry0 | < -> cmpSeek. | > < >
+
+
+cmpIter | = -> seekComparisionBegin | < _ <
+
+seekComparisionBegin 0 < -> seekComparisionBegin 0 < < <
+seekComparisionBegin 0 > -> seekComparisionBegin 0 < > <
+seekComparisionBegin 0 = -> seekComparisionBegin 0 < = <
+seekComparisionBegin 1 < -> seekComparisionBegin 1 < < <
+seekComparisionBegin 1 > -> seekComparisionBegin 1 < > <
+seekComparisionBegin 1 = -> seekComparisionBegin 1 < = <
+seekComparisionBegin | _ -> compare | > _ >
+seekComparisionBegin _ _ -> compare _ > _ >
+seekComparisionBegin 1 _ -> comparisionResultBigger 1 > _ >
+seekComparisionBegin 0 _ -> comparisionResultBigger 0 > _ >
+seekComparisionBegin | < -> comparisionResultLessEq | > _ >
+seekComparisionBegin _ < -> comparisionResultLessEq _ > _ >
+
+compare 1 < -> comparisionResultLessEq 1 > _ >
+compare 1 = -> compare 1 > _ >
+compare 1 > -> comparisionResultBigger 1 > _ >
+compare 0 < -> comparisionResultLessEq 0 > _ >
+compare 0 = -> compare 0 > _ >
+compare 0 > -> comparisionResultBigger 0 > _ >
+compare | _ -> comparisionResultLessEq | ^ _ ^
+
+comparisionResultLessEq 0 < -> comparisionResultLessEq 0 > _ >
+comparisionResultLessEq 0 = -> comparisionResultLessEq 0 > _ >
+comparisionResultLessEq 0 > -> comparisionResultLessEq 0 > _ >
+comparisionResultLessEq 1 < -> comparisionResultLessEq 1 > _ >
+comparisionResultLessEq 1 = -> comparisionResultLessEq 1 > _ >
+comparisionResultLessEq 1 > -> comparisionResultLessEq 1 > _ >
+
+comparisionResultBigger 0 < -> comparisionResultBigger 0 > _ >
+comparisionResultBigger 0 = -> comparisionResultBigger 0 > _ >
+comparisionResultBigger 0 > -> comparisionResultBigger 0 > _ >
+comparisionResultBigger 1 < -> comparisionResultBigger 1 > _ >
+comparisionResultBigger 1 = -> comparisionResultBigger 1 > _ >
+comparisionResultBigger 1 > -> comparisionResultBigger 1 > _ >
+
+
+comparisionResultBigger | _ -> swapIndent | < _ <
+swapIndent 0 _ -> swapIndent 0 < _ <
+swapIndent 1 _ -> swapIndent 1 < _ <
+swapIndent _ _ -> swapGoto| _ > _ >
+swapIndent | _ -> swapGoto| | > _ >
+swapGoto| 0 _ -> swapGoto| 0 > _ ^
+swapGoto| 1 _ -> swapGoto| 1 > _ ^
+swapGoto| | _ -> swapCopyRight | > _ ^
+swapCopyRight 0 _ -> swapCopyRight 0 > 0 >
+swapCopyRight 1 _ -> swapCopyRight 1 > 1 >
+swapCopyRight | _ -> swapSeek| | < | >
+swapCopyRight _ _ -> swapSeek| _ < | >
+
+swapSeek| 0 _ -> swapSeek| 0 < _ ^
+swapSeek| 1 _ -> swapSeek| 1 < _ ^
+swapSeek| | _ -> swapSeek|| | < _ ^
+swapSeek|| 0 _ -> swapSeek|| 0 < _ ^
+swapSeek|| 1 _ -> swapSeek|| 1 < _ ^
+swapSeek|| | _ -> swapCopyLeft | > _ ^
+swapSeek|| _ _ -> swapCopyLeft _ > _ ^
+
+swapCopyLeft 0 _ -> swapCopyLeft 0 > 0 >
+swapCopyLeft 1 _ -> swapCopyLeft 1 > 1 >
+swapCopyLeft | _ -> swapReturn1 | < _ ^
+swapCopyLeft _ _ -> swapReturn1 _ < _ ^
+
+swapReturn1 0 _ -> swapReturn1 0 < _ ^
+swapReturn1 1 _ -> swapReturn1 1 < _ ^
+swapReturn1 | _ -> swapReturn2 | > _ <
+swapReturn1 _ _ -> swapReturn2 _ > _ <
+
+swapReturn2 0 0 -> swapReturn2 0 ^ 0 <
+swapReturn2 0 1 -> swapReturn2 0 ^ 1 <
+swapReturn2 0 | -> swapReturn2 0 ^ | <
+swapReturn2 1 0 -> swapReturn2 1 ^ 0 <
+swapReturn2 1 1 -> swapReturn2 1 ^ 1 <
+swapReturn2 1 | -> swapReturn2 1 ^ | <
+swapReturn2 0 _ -> makeMv 0 ^ _ >
+swapReturn2 1 _ -> makeMv 1 ^ _ >
+
+makeMv 0 1 -> makeMv 1 > _ >
+makeMv 1 1 -> makeMv 1 > _ >
+makeMv | 1 -> makeMv 1 > _ >
+makeMv 0 0 -> makeMv 0 > _ >
+makeMv 1 0 -> makeMv 0 > _ >
+makeMv | 0 -> makeMv 0 > _ >
+makeMv 0 | -> makeMv | > _ >
+makeMv 1 | -> makeMv | > _ >
+makeMv | | -> makeMv | > _ >
+
+makeMv | _ -> postmove | < _ <
+makeMv _ _ -> postmove _ < _ <
+
+postmove 1 _ -> postmove 1 < _ <
+postmove 0 _ -> postmove 0 < _ <
+postmove | _ -> postmove' | < _ <
+postmove _ _ -> S _ > _ >
+postmove' 1 _ -> postmove' 1 < _ <
+postmove' 0 _ -> postmove' 0 < _ <
+postmove' | _ -> postmove'' | < _ <
+postmove' _ _ -> S _ > _ >
+postmove'' 1 _ -> postmove'' 1 < _ <
+postmove'' 0 _ -> postmove'' 0 < _ <
+postmove'' | _ -> S | > _ >
+postmove'' _ _ -> S _ > _ >
+
+comparisionResultLessEq | _ -> S | > _ >
+
+S _ _ -> seekBeginAns _ < _ <
+seekBeginAns 0 _ -> seekBeginAns 0 < _ <
+seekBeginAns 1 _ -> seekBeginAns 1 < _ <
+seekBeginAns | _ -> seekBeginAns | < _ <
+seekBeginAns _ _ -> AC _ > _ >
+

@@ -1,0 +1,54 @@
+start: start
+accept: accept
+reject: reject
+blank: _
+
+###
+# turing machine language extension:
+## comments -- line starts with #
+## keep what was
+# ? in right side means keep char that was
+## multiple options
+# if char before contains more than one char they are mapped to ame action
+## pattern negation
+# ~0123 == all chars except 0123
+## functions -- @name suffix accept reject [additional parameters to eval starting with `,` as single word]
+
+# skipAll
+# direction is one of "<^>"
+# @skipAll suff accept null ,"chars-to-skip","direction","dirafter"
+# @skipAll suff accept null ,"chars-to-skip",">","^"
+
+# decrement
+# decrements right to left, stopping on changed bit or leftrmost on fail
+# @decrement suffix accept reject
+###
+
+## all available characters
+@@_01=<>!
+
+start 01 -> skipAllGoSep ? ^
+
+@skipAll GoSep changeSep null ,"~<",">","^"
+changeSep < -> skipAllGoRight ! >
+@skipAll GoRight testRight null ,"~_",">","<"
+
+@[01
+testRight . -> skipAllLeft. _ <
+@skipAll Left. skipAllLeft'. null ,"~!","<","<"
+@skipAll Left'. skipAllLeft.Done null ,"=<>","<","^"
+skipAllLeft.Done _ -> accept < ^
+@]
+
+skipAllLeft0Done 0 -> skipAllGoRight = >
+skipAllLeft0Done 1 -> skipAllGoRight > >
+skipAllLeft1Done 0 -> skipAllGoRight < >
+skipAllLeft1Done 1 -> skipAllGoRight = >
+
+testRight ! -> skipAllVerify ! <
+
+@skipAll Verify TrueVerify null ,"~_","<",">"
+TrueVerify < -> accept ? ^
+TrueVerify 01>! -> reject ? ^
+TrueVerify = -> TrueVerify ? >
+

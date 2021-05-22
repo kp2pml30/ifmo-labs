@@ -1,0 +1,29 @@
+start: start
+accept: accept
+reject: reject
+blank: _
+
+# turing machine extension:
+# comments -- line starts with #
+# functions -- @name suffix accept reject [additional parameters to eval starting with `,`]
+
+# skipAll
+# direction is one of "<^>"
+# @skipAll suff accept null ,"chars-to-skip","direction","dirafter"
+# @skipAll suff accept null ,"chars-to-skip",">","^"
+
+# decrement
+# decrements right to left, stopping on changed bit or leftrmost on fail
+# @decrement suffix accept reject
+
+start 01 -> skipAllGoEnd ? ^
+
+@skipAll GoEnd decrementRight null ,"~_",">","<"
+
+@decrement Right skipAllGo< reject
+
+@skipAll Go< decrementLeft null ,"~<","<","<"
+
+@decrement Left skipAllGoEnd acccept
+
+#decrement
