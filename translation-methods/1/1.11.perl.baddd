@@ -1,0 +1,13 @@
+while (<>) {
+	if (/^(0|1[01]*)[\r\n]*$/) {
+		my $res = 0;
+		my $str = $_;
+		$str =~ s/\s+//;
+		foreach $char (split //, $str) {
+			$res = $res * 2;
+			$res += int($char);
+		}
+		print if $res % 3 == 0;
+	}
+}
+
