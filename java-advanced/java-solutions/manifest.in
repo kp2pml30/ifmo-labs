@@ -1,0 +1,6 @@
+Manifest-Version: 1.0
+Build-Jdk-Spec: 11
+Package: info.kgeorgiy.ja.prokopenko.implementor
+Created-By: kp2pml30
+Class-Path: @CLASSPATH@
+Main-Class: info.kgeorgiy.ja.prokopenko.implementor.Implementor

@@ -1,0 +1,14 @@
+/**
+ * Module for implementor hw
+ *
+ * @author : Kirill Prokopenko M3236
+ */
+
+open module info.kgeorgiy.ja.prokopenko.implementor {
+	requires transitive info.kgeorgiy.java.advanced.implementor;
+
+	requires java.compiler;
+
+	exports info.kgeorgiy.ja.prokopenko.implementor;
+}
+
