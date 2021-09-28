@@ -1,0 +1,6 @@
+[submodule "optimization-methods-labs"]
+	path = optimization-methods-labs
+	url = git@github.com:kp2pml30/optimization-methods-labs.git
+[submodule "simple-parsers"]
+	path = simple-parsers
+	url = git@github.com:kp2pml30/simple-parsers.git
