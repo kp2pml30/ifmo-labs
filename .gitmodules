@@ -1,3 +1,6 @@
 [submodule "optimization-methods-labs"]
 	path = optimization-methods-labs
 	url = git@github.com:kp2pml30/optimization-methods-labs.git
+[submodule "data-analysis/2/bachelor_thesis"]
+	path = data-analysis/2/bachelor_thesis
+	url = git@github.com:kp2pml30/bachelor_thesis.git
