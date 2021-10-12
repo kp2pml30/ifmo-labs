@@ -94,7 +94,7 @@ makeBop checker = makeBopEx (lfetchIf checker)
 
 parseAtom :: PMonad Expr
 parseAtom = do
-	result <- foldl' seqFoldFirst (return Nothing) [tryName, tryParen]
+	result <- foldl' seqFoldFirst (return Nothing) [tryName, tryParen, tryNot]
 	maybe (mkError "can't parse atom at ") return result
 	where
 		tryParen :: PMonad (Maybe Expr)
@@ -107,6 +107,11 @@ parseAtom = do
 				got
 		tryName :: PMonad (Maybe Expr)
 		tryName = lfetchIf isTName >>= mapM (\TName{..} -> return $ Name tName tPos)
+		tryNot :: PMonad (Maybe Expr)
+		tryNot =
+			lfetchIf isTNot >>= mapM (\nt -> do
+				res <- parseAtom
+				return $ Not res (position nt))
 
 
 seqFoldFirst :: PMonad (Maybe a) -> PMonad (Maybe a) -> PMonad (Maybe a)

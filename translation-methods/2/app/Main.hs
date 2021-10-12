@@ -9,7 +9,7 @@ import qualified Data.Text as T
 
 main :: IO ()
 main = do
-	let tests = ["a", "a b", "(a)", "((a))", "()", "a and b and c", "a and (b and c)", "a and", "a in b", "a not in b", "a not b"]
+	let tests = ["a", "loooong", "andmore", "a b", "(a)", "((a))", "()", "a and b and c", "a and (b and c)", "a and", "a in b", "a not in b", "a not b", "not a", "not not a"]
 	mapM_ (\(i, t) -> do
 		putStrLn $ show i ++ ".\t" ++ t
 		let toks = tokenize $ T.pack t
