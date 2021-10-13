@@ -1,6 +1,8 @@
 module Pysets.Lex (tokenize) where
 
 import Pysets.Tokens
+import Pysets.Exc
+
 import Data.Text (Text)
 import qualified Data.Text as T
 import Data.Char
@@ -82,7 +84,7 @@ skipWS = do
 	whenM lhas do
 		whenM (isSpace <$> lpeek) (lfetch >> skipWS)
 
-getFewTokens :: State LState [Token]
+getFewTokens :: State LState (Either ParserError [Token])
 getFewTokens = do
 	skipWS
 	res' <- sequence $ wrap <$> [fetchName, fetchSimple]
@@ -91,19 +93,17 @@ getFewTokens = do
 	then do
 		has <- lhas
 		pos <- gets position
-		if has then error $ "can't tokenize at " ++ show pos
-		else return []
-	else return res
+		if has then return $ Left $ ParserError "can't tokenize" (Just pos)
+		else return $ Right []
+	else return $ Right res
 
-tokenizeM :: State LState [Token]
+tokenizeM :: State LState TokenList
 tokenizeM = do
 	cur <- getFewTokens
-	if null cur
-	then return []
-	else do
-		nxt <- tokenizeM
-		return $ cur ++ nxt
-
-tokenize :: Text -> [Token]
+	case cur of
+		Left err -> return $ ListError err
+		Right [] -> return ListEof
+		Right l  -> tokenListConverter l <$> tokenizeM
+tokenize :: Text -> TokenList
 tokenize str =
 	evalState tokenizeM LState { rest = str, lpos = Position 0 0 0 }

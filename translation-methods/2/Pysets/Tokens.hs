@@ -4,13 +4,12 @@ module Pysets.Tokens where
 
 import Pysets.TH
 
-data Position = Position { line :: !Int, col :: !Int, absolute :: !Int } deriving (Eq)
+data Position = Position { line :: !Int, col :: !Int, absolute :: !Int } deriving (Eq, Show)
 
 class Pos a where
 	position :: a -> Position
 
-instance Show Position where
-	show Position { line, col } = show line ++ ":" ++ show col
+showPosition Position { line, col } = show line ++ ":" ++ show col
 
 data Token
 	= TLParen { tPos :: !Position }

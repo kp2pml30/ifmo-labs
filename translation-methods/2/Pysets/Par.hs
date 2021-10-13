@@ -2,46 +2,45 @@ module Pysets.Par (ParserError(..), parse) where
 
 import Pysets.Tokens
 import Pysets.Expr
+import Pysets.Exc
 
 import Data.List (foldl', find)
 import Data.Maybe
-import Control.Monad.State
 import Control.Monad
 import Control.Monad.Extra
-import Control.Monad.Trans.Except
 import Control.Monad.Except (throwError)
-import Control.Monad.Identity
+import Control.Monad.State
 
-type MyState = [Token]
-type MyMonadT e m r = StateT MyState (ExceptT e m) r
+type MyState = TokenList
+type PMonad a = PysetsMonad MyState a
 
-runMyMonadT :: (Monad m) => MyMonadT e m a -> MyState -> m (Either e a)
-runMyMonadT m = runExceptT . evalStateT m
-
-type MyMonad e a = MyMonadT e Identity a
-runMyMonad m = runIdentity . runMyMonadT m
-
-newtype ParserError = ParserError String deriving (Show, Eq, Ord)
-
-type PMonad a = MyMonad ParserError a
-
-parse :: [Token] -> Either ParserError Expr
-parse = runMyMonad parseFinish
+parse :: TokenList -> Either ParserError Expr
+parse = runPysetsMonad parseFinish
 
 lhas :: PMonad Bool
-lhas = gets (not . null)
+lhas = do
+	g <- get
+	return $ case g of
+		ListEof -> False
+		_       -> True
+
+
+lpeekMod :: (Token -> TokenList -> PMonad ()) -> PMonad Token
+lpeekMod mod = do
+	l <- get
+	case l of
+		ListEof -> error "error in parser"
+		TokenListCons h t -> mod h t >> return h
+		ListError err -> throwError err
 
 lpeek :: PMonad Token
-lpeek = gets head
+lpeek = lpeekMod (\_ _ -> return ())
 
 ltrypeek :: PMonad (Maybe Token)
 ltrypeek = ifM lhas (Just <$> lpeek) (return Nothing)
 
 lfetch :: PMonad Token
-lfetch = do
-	ret <- gets head
-	modify tail
-	return ret
+lfetch = lpeekMod (\_ t -> put t)
 
 lfetchIf :: (Token -> Bool) -> PMonad (Maybe Token)
 lfetchIf f = do
@@ -49,19 +48,19 @@ lfetchIf f = do
 	when (isJust res) (void lfetch)
 	return res
 
-mkError s = lgetPos >>= lift . throwError . ParserError . (\x -> s ++ " at " ++ x)
+mkError s = lgetPos >>= lift . throwError . ParserError s
 
 lassert :: (Token -> Bool) -> String -> PMonad Token
 lassert f s =
 	lfetchIf f >>= maybe (mkError s) return
 
-lgetPos :: PMonad String
-lgetPos = maybe "<EOF>" (show . position) <$> ltrypeek
+lgetPos :: PMonad (Maybe Position)
+lgetPos = fmap position <$> ltrypeek
 
 parseFinish :: PMonad Expr
 parseFinish = do
 	res <- parseM
-	whenM (gets (not . null)) (mkError "unparsed end")
+	whenM lhas (mkError "unparsed end")
 	return res
 
 parseM :: PMonad Expr
@@ -112,7 +111,6 @@ parseAtom = do
 			lfetchIf isTNot >>= mapM (\nt -> do
 				res <- parseAtom
 				return $ Not res (position nt))
-
 
 seqFoldFirst :: PMonad (Maybe a) -> PMonad (Maybe a) -> PMonad (Maybe a)
 seqFoldFirst a b = do
