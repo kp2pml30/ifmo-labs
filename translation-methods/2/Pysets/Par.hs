@@ -66,25 +66,31 @@ parseFinish = do
 parseM :: PMonad Expr
 parseM = parseIn
 
-parseAnd = makeBop isTAnd And parseAtom
-parseXor = makeBop isTXor Xor parseAnd
-parseOr  = makeBop isTOr  Or  parseXor
+cpos x a b t = x a b (position t)
+
+parseAnd = makeBop isTAnd (cpos And) parseAtom
+parseXor = makeBop isTXor (cpos Xor) parseAnd
+parseOr  = makeBop isTOr  (cpos Or)  parseXor
 parseIn  = makeBopEx
 	(seqFoldFirst (lfetchIf isTIn) checkNotIn)
-	(\l r p -> Not (In l r p) p)
+	(\l r p ->
+		let po = position p in
+		case p of
+			TNot {} -> Not (In l r po) po
+			_       -> In l r po)
 	parseOr
 
-checkNotIn = lfetchIf isTNot >>= mapM \not' -> lassert isTIn ("missing `in` in `not in` operator")
+checkNotIn = lfetchIf isTNot >>= mapM \not' -> lassert isTIn ("missing `in` in `not in` operator") >> return not'
 
-makeBopEx :: PMonad (Maybe Token) -> (Expr -> Expr -> Position -> Expr) -> PMonad Expr -> PMonad Expr
+makeBopEx :: PMonad (Maybe Token) -> (Expr -> Expr -> Token -> Expr) -> PMonad Expr -> PMonad Expr
 makeBopEx checker returner lower = lower >>= spin
 	where
 		spin :: Expr -> PMonad Expr
 		spin l = do
 			op <- checker
-			comb <- mapM (cont l . position) op
+			comb <- mapM (cont l) op
 			maybe (return l) spin comb
-		cont :: Expr -> Position -> PMonad Expr
+		cont :: Expr -> Token -> PMonad Expr
 		cont l op = do
 			r <- lower
 			return $ returner l r op

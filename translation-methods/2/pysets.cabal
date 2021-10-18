@@ -34,7 +34,7 @@ executable parser
     import:           dflt
     hs-source-dirs:   parser
     main-is:          Main.hs
-    build-depends:    pysetslib
+    build-depends:    pysetslib, process
 
 Test-Suite test-basic
 		import:           dflt
