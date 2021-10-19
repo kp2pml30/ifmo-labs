@@ -1,3 +1,5 @@
 *.class
 *.jar
 build
+dist-newstyle
+hie.yaml
