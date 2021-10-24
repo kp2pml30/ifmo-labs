@@ -2,30 +2,49 @@ module Obfuscation.Obf where
 
 import Control.Monad
 import Control.Monad.Reader
+import Control.Monad.State
 import Data.Foldable
 import qualified Data.Map as Map
 
-type Inserter = MyState -> String -> String
+type Inserter = String -> Md
 
-data MyState = MyState { seed :: Int, names :: Map.Map String String, inserter :: Inserter }
+data MyState = MyState { names :: Map.Map String String, inserter :: Inserter, randomizer :: Md }
 
-type Md = Reader MyState String
+type MdR r = ReaderT MyState (State [Int]) r
+type Md = MdR String
 
-processArgs = undefined
+runMd s m = flip evalState s . flip runReaderT m
+
+fetchSeed :: MdR Int
+fetchSeed = do
+	modify tail
+	gets head
 
 sepCat :: Char -> [String] -> String
 sepCat _ [] = ""
 sepCat c l = tail $ foldl' (\x y -> x ++ [c] ++ y) "" l
 
+evalInsert :: String -> MdR (MyState, String)
+evalInsert n = do
+	was <- ask
+	insN <- inserter was n
+	let newState = was { names = Map.insertWith (const id) n insN (names was) }
+	return (newState, names newState Map.! n)
+
+rndAction :: Md -> Md
+rndAction x = do
+	r <- (\x -> x `mod` 4 + 1) <$> fetchSeed
+	rnd <- reader randomizer
+	res <- replicateM r rnd
+	xres <- x
+	return $ mconcat res ++ xres
+
 bodyDecl :: (String, String, Md) -> Md -> Md
 bodyDecl (t, n, v) b = do
 	vres <- v
-	was <- ask
-	let newName = inserter was was n
-	let upd = was { names = Map.insert n newName (names was) }
+	(upd, newName) <- evalInsert n
 	bres <- local (const upd) b
 	return $ t ++ " " ++ newName ++ "=" ++ vres ++ ";" ++ bres
-	-- foldl' (++) "" <$> sequence b -- todo : rework sequence
 
 bopLift :: String -> Md -> Md -> Md
 bopLift o l r = do
@@ -45,42 +64,68 @@ mkCall e a = do
 	return $ call ++ "(" ++ args ++ ")"
 
 mkIf :: Md -> Md -> Md -> Md
-mkIf c t e =
+mkIf c t =
 	liftM3 (\a b c -> a ++ b ++ c)
 		((\x -> "if(" ++ x ++ "){") <$> c)
 		((++ "}") <$> t)
-		e
+		-- eta reduced else
 
 mkFunc :: String -> [(String, String)] -> Md -> Md
 mkFunc n a b = do
-	was <- ask
-	let upd = foldl' (\a@MyState { names, inserter } (_,x) -> a { names = Map.insert x (inserter a x) names }) was a
-	bs <- local (const upd) b
-	let nameMapper = (names upd Map.!)
-	return $ n ++ "(" ++ sepCat ',' (map (\(x,y) -> x ++ " " ++ nameMapper y) a) ++ "){" ++ bs ++ "}"
+	res <- mkArgs a
+	return $ n ++ "(" ++ res
+	where
+		mkArgs [] = (\x -> "){" ++ x ++ "}") <$> b
+		mkArgs [(t, n)] = do
+			(ns, nn) <- evalInsert n
+			body <- local (const ns) b
+			return $ t ++ " " ++ nn ++ "){" ++ body ++ "}"
+		mkArgs ((t, n):xs) = do
+			(ns, nn) <- evalInsert n
+			rest <- local (const ns) (mkArgs xs)
+			return $ t ++ " " ++ nn ++ "," ++ rest
 
 mkName :: String -> Md
 mkName n = do
 	r <- reader names
 	return $ Map.findWithDefault n n r
 
-insId _ = id
-insRev _ = reverse
+insId :: Inserter
+insId = return
+insRev :: Inserter
+insRev = return . reverse
 
-insI1O0 ms _ =
-	let size = Map.size (names ms) in
-	genStr size
-
-genStr i =
-	(if even i then 'I' else 'O') : helper (i `div` 2)
+insI1O0 :: Inserter
+insI1O0 _ = do
+	size <- reader $ Map.size . names
+	seed <- fetchSeed
+	return $ genStr (size + seed)
 	where
-		helper 0 = ""
-		helper i = (case i `mod` 4 of
-			0 -> '0'
-			1 -> 'I'
-			2 -> '1'
-			3 -> 'O'
-			_ -> undefined) : helper (i `div` 4)
+		genStr i =
+			(if even i then 'I' else 'O') : helper (i `div` 2)
+			where
+				helper 0 = ""
+				helper i = (case i `mod` 4 of
+					0 -> '0'
+					1 -> 'I'
+					2 -> '1'
+					3 -> 'O'
+					_ -> undefined) : helper (i `div` 4)
+
+evalParseHelp rnd seeds ins =
+	foldMap (runMd (cycle seeds) $ MyState Map.empty ins rnd)
+
+-- todo
+insertSmth :: Md
+insertSmth = return ";"
+
+evalParseRnd :: [Int] -> Inserter -> [Md] -> String
+evalParseRnd = evalParseHelp do
+		s <- fetchSeed
+		if even s
+		then return ""
+		else do
+			return ";"
 
 evalParse :: Inserter -> [Md] -> String
-evalParse ins = foldMap (`runReader` (MyState 0 Map.empty ins))
+evalParse = evalParseHelp (return "") [0]

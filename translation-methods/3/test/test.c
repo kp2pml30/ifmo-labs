@@ -24,6 +24,13 @@ void shadowing() {
 	int x = 10;
 	if (1) {
 		int x = 12;
+		if (1) {
+			int x = 13;
+			print(x);
+		} else {
+			int x = 14;
+			print(x);
+		}
 		print(x);
 	}
 	print(x);

@@ -14,10 +14,10 @@ main = do
 	rnd <- getStdGen
 	let seeds = randomRs (10 :: Int, 2048) rnd
 	let toks = alexScanTokens s
-	-- print toks
-	let mapper = case args of
-		[] -> insI1O0
-		["--id"] -> insId
-		_ -> undefined
-	let expr = evalParse mapper $ parse toks
+	let eval = case args of
+		[] -> evalParseRnd seeds insI1O0
+		["--no-random"] -> evalParse insI1O0
+		["--id"] -> evalParse insId
+		_ -> error "unknown options"
+	let expr = eval $ parse toks
 	putStrLn expr

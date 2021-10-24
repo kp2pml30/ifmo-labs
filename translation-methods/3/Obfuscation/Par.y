@@ -39,7 +39,7 @@ File
 	| Func File { $1:$2 }
 
 Func
-	: Type name '(' Arguments ')' '{' Body '}' { mkFunc ($1 ++ " " ++ $2) $4 $7 } -- $1 ++ " " ++ $2 ++ "(" ++ ")"
+	: Type name '(' Arguments ')' '{' Body '}' { mkFunc ($1 ++ " " ++ $2) $4 (rndAction $7) }
 
 Type
 	: name Asteriscs { $1 ++ $2 }
@@ -60,14 +60,12 @@ Argument
 	: Type name { ($1, $2) }
 
 Body
-	: { return "" }
-	| Statement Body { liftM2 (++) $1 $2 }
-	| Decl Body { bodyDecl $1 $2 }
-
+	: { rndAction (return "") }
+	| Statement Body { rndAction $ liftM2 (++) $1 $2 }
+	| Decl Body { rndAction $ bodyDecl $1 $2 }
 
 Decl
 	: Type name '=' Expr ';' { ($1, $2, $4) }
-	-- | Type name ';' { (++ ";") `fmap` liftM2 (++) $1 (return (' ':$2)) } -- error?
 
 Statement
 	: Expr ';' { (++ ";") `fmap` $1 }
@@ -86,8 +84,8 @@ Expr
 	| Expr '-' Expr { bopLift "-" $1 $3 }
 	| Expr '*' Expr { bopLift "*" $1 $3 }
 	| Expr '/' Expr { bopLift "/" $1 $3 }
-	| '(' Expr ')' { (\x -> "(" ++ x ++ ")") `fmap` $2 }
 	| Expr '(' CallArguments ')' { mkCall $1 $3 }
+	| '(' Expr ')' { (\x -> "(" ++ x ++ ")") `fmap` $2 }
 
 CallArguments
 	: { return "" :: Md }

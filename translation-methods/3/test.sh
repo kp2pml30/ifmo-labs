@@ -7,4 +7,5 @@ function test {
 
 test simple
 test adv
+test ifs
 test test
