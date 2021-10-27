@@ -1,11 +1,8 @@
 #!/bin/bash
 set -e
 
-function test {
-	./test1.sh "test/$1.c"
-}
+for f in test/*.c
+do
+	./test1.sh "$f"
+done
 
-test simple
-test adv
-test ifs
-test test

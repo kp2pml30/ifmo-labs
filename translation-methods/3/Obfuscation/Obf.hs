@@ -4,6 +4,7 @@ import Control.Monad
 import Control.Monad.Reader
 import Control.Monad.State
 import Data.Foldable
+import Data.Char (chr)
 import qualified Data.Map as Map
 
 type Inserter = String -> Md
@@ -115,17 +116,71 @@ insI1O0 _ = do
 evalParseHelp rnd seeds ins =
 	foldMap (runMd (cycle seeds) $ MyState Map.empty ins rnd)
 
--- todo
+selectOneOf :: [a] -> MdR a
+selectOneOf lst = do
+	let len = length lst
+	r <- (`mod` len) <$> fetchSeed
+	return $ lst !! r
+
+makeStringLiteral :: Md
+makeStringLiteral = do
+	r <- (`mod` 16) <$> fetchSeed
+	gen r ['"']
+	where
+		gen 0 s = return $ '"' : s
+		gen x s = do
+			c <- (\s -> s `mod` (91 - 38) + 38) <$> fetchSeed
+			gen (x - 1) ((chr c):s)
+
+makeIntLiteral :: Md
+makeIntLiteral = do
+	(\x -> show $ x `mod` 65536) <$> fetchSeed
+
+makeVarRead :: Md
+makeVarRead = do
+	mp <- reader names
+	let sz = Map.size mp
+	if sz == 0
+	then makeIntLiteral
+	else do
+		r <- (`mod` Map.size mp) <$> fetchSeed
+		return $ "(int)" ++ snd (Map.elemAt r mp)
+
+insertAtom :: Md
+insertAtom = do
+	join $ selectOneOf
+		[ makeIntLiteral
+		, (\s -> "strlen(" ++ s ++ ")") <$> makeStringLiteral
+		, (\s -> "atoi(" ++ s ++ ")") <$> makeStringLiteral
+		, (\s1 s2 -> "strcmp(" ++ s1 ++ "," ++ s2 ++ ")") <$> makeStringLiteral <*> makeStringLiteral
+		-- , return "rand()"
+		, makeVarRead
+		]
+
+insertExpr :: Md
+insertExpr  =
+	helper (5 :: Int)
+	where
+		helper 0 = insertAtom
+		helper n =
+			let h = helper (n - 1) in
+				join $ selectOneOf
+					[ insertAtom
+					, (\s -> "(" ++ s ++ ")") <$> h
+					, (\a b -> a ++ "+" ++ b) <$> h <*> h
+					, (\a b -> a ++ "*" ++ b) <$> h <*> h
+					, (\a b -> a ++ "-" ++ b) <$> h <*> h
+					]
+
 insertSmth :: Md
-insertSmth = return ";"
+insertSmth = (++ ";") <$> insertExpr
 
 evalParseRnd :: [Int] -> Inserter -> [Md] -> String
 evalParseRnd = evalParseHelp do
 		s <- fetchSeed
 		if even s
 		then return ""
-		else do
-			return ";"
+		else insertSmth
 
 evalParse :: Inserter -> [Md] -> String
 evalParse = evalParseHelp (return "") [0]
