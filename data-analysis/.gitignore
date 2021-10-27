@@ -1,3 +1,4 @@
 *.csv
 .*checkpoints*
 __pycache__
+lecture*.ipynb
