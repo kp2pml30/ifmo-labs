@@ -8,6 +8,7 @@ import Data.Foldable (toList)
 
 data Expr
 	= Not { expr :: Expr, ePos :: Position }
+	| Minus { lexpr :: Expr, rexpr :: Expr, ePos :: Position }
 	| And { lexpr :: Expr, rexpr :: Expr, ePos :: Position }
 	| Or { lexpr :: Expr, rexpr :: Expr, ePos :: Position }
 	| Xor { lexpr :: Expr, rexpr :: Expr, ePos :: Position }
@@ -17,6 +18,7 @@ data Expr
 
 instance Show Expr where
 	show Not {..} = "!" ++ show expr
+	show e@Minus {} = shB "-" e
 	show e@And {} = shB "&" e
 	show e@Or {} = shB "|" e
 	show e@Xor {} = shB "^" e
@@ -50,6 +52,7 @@ shwD Not { expr } = do
 	append $ i >< s2s "[shape=circle,label=\"not\"];"
 	append $ i >< s2s "->" >< nxt >< s2s ";"
 	return i
+shwD e@Minus {} = mkBop e "-"
 shwD e@And {} = mkBop e "and"
 shwD e@Or {} = mkBop e "or"
 shwD e@Xor {} = mkBop e "xor"

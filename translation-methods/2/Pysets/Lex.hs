@@ -10,7 +10,6 @@ import Data.Maybe
 import Data.Map (Map)
 import qualified Data.Map as Map
 import Control.Monad.State
-import Control.Monad
 import Control.Monad.Extra
 
 data LState = LState { lpos :: Position, rest :: Text }
@@ -66,7 +65,7 @@ fetchName = do
 		return $ Just $ fromMaybe (TName found) isop
 
 simple :: Map Char TProvider
-simple = Map.fromList [('(', TLParen), (')', TRParen)]
+simple = Map.fromList [('(', TLParen), (')', TRParen), ('-', TMinus)]
 
 fetchSimple :: State LState (Maybe TProvider)
 fetchSimple = do

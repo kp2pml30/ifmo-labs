@@ -68,7 +68,8 @@ parseM = parseIn
 
 cpos x a b t = x a b (position t)
 
-parseAnd = makeBop isTAnd (cpos And) parseAtom
+parseMinus = makeBop isTMinus (cpos Minus) parseAtom
+parseAnd = makeBop isTAnd (cpos And) parseMinus
 parseXor = makeBop isTXor (cpos Xor) parseAnd
 parseOr  = makeBop isTOr  (cpos Or)  parseXor
 parseIn  = makeBopEx

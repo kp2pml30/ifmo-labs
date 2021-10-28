@@ -6,7 +6,7 @@
 
 ```
 Expr = InE
-InE = Ore (Inners Ore)?
+InE = Ore (Inners Ore)*
 Innners = in | not in
 Ore = (Ore or)? Xore
 Xore = (Xore xor)? Ande
@@ -34,7 +34,8 @@ Expr = InE
 InE = Ore (not? in Ore)?
 Ore = Xore (or Xore)*
 Xore = Ande (xor Ande)*
-Ande = Atom (and Atom)*
+Ande = Minuse (and Minuse)*
+Minuse = Atom (minus Atom)*
 Atom = name | '(' Expr ')' | not Atom
 ```
 
@@ -53,10 +54,13 @@ Ore1 -> or Xore Ore1
 Xore -> Ande Xore1
 Xore1 -> EPSILON
 Xore1 -> xor Ande Xore1
-Ande -> Atom Ande1
+Ande -> Minuse Ande1
 Ande1 -> EPSILON
-Ande1 -> and Atom Ande1
-Atom -> name 
+Ande1 -> and Minuse Ande1
+Minus -> Atom Minuse1
+Minuse1 -> EPSILON
+Minuse1 -> minus Atom Minuse1
+Atom -> name
 Atom -> lparen Expr rparen
 Atom -> not Atom
 ```
@@ -65,19 +69,21 @@ Atom -> not Atom
 
 [алгоритм построения](https://neerc.ifmo.ru/wiki/index.php?title=Построение_FIRST_и_FOLLOW)
 
-|Правило|FST            |FOLLOW          |
-|-------|---------------|----------------|
-|Expr   |FST(Atom)      |rparen \$       |
-|InE    |FST(Atom)      |rparen \$       |
-|InE1   |FST(Inners) ε  |rparen \$       |
-|Inners |not in         |FST(Atom)       |
-|Ore    |FST(Atom)      |FLW(InE) in not |
-|Ore1   |or ε           |FLW(Ore)        |
-|Xore   |FST(Atom)      |FLW(Ore) or     |
-|Xore1  |xor ε          |FLW(Xore)       |
-|Ande   |FST(Atom)      |FLW(Xore) xor   |
-|Ande1  |and ε          |FLW(Ande)       |
-|Atom   |not lparen name|FLW(Ande) and   |
+|Правило|FST            |FOLLOW            |
+|-------|---------------|------------------|
+|Expr   |FST(Atom)      |rparen \$         |
+|InE    |FST(Atom)      |rparen \$         |
+|InE1   |FST(Inners) ε  |rparen \$         |
+|Inners |not in         |FST(Atom)         |
+|Ore    |FST(Atom)      |FLW(InE) in not   |
+|Ore1   |or ε           |FLW(Ore)          |
+|Xore   |FST(Atom)      |FLW(Ore) or       |
+|Xore1  |xor ε          |FLW(Xore)         |
+|Ande   |FST(Atom)      |FLW(Xore) xor     |
+|Ande1  |and ε          |FLW(Ande)         |
+|Minus  |FST(Atom)      |FLW(Ande) and     |
+|Minuse1|minus ε        |FLW(Minuse)       |
+|Atom   |not lparen name|FLW(Minuse) minus |
 
 рассмотрим основные виды правил и как они преобразовались в FOLLOW:
 

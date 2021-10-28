@@ -14,6 +14,7 @@ showPosition Position { line, col } = show line ++ ":" ++ show col
 data Token
 	= TLParen { tPos :: !Position }
 	| TRParen { tPos :: !Position }
+	| TMinus { tPos :: !Position }
 	| TAnd { tPos :: !Position }
 	| TOr { tPos :: !Position }
 	| TXor { tPos :: !Position }
