@@ -1,8 +1,8 @@
 cabal-version:      2.2
-name:               pysets
+name:               ylexpar
 version:            0.0.0.1
 
-synopsis:           simple c subset obfuscation
+synopsis:           simple lexer-parser generator
 
 -- description:
 -- bug-reports:
@@ -13,8 +13,6 @@ maintainer:         kp2pml30@gmail.com
 copyright:          Copyright (C) kp2pml30
 
 build-type:         Simple
--- category:
--- extra-source-files: CHANGELOG.md
 
 common dflt
     default-language: Haskell2010
@@ -22,19 +20,19 @@ common dflt
         base, text
     ghc-options:
         -Wall -Wno-tabs -Wno-missing-signatures -Wno-name-shadowing
-    default-extensions:  BangPatterns, RecordWildCards, NamedFieldPuns, BlockArguments
+    default-extensions:  BangPatterns, RecordWildCards, NamedFieldPuns, BlockArguments, ScopedTypeVariables, DerivingStrategies, GeneralizedNewtypeDeriving, TupleSections
 
-library obfusc
+library ylexer
     import:           dflt
     exposed-modules:
-        Obfuscation.Lex Obfuscation.Tokens Obfuscation.Par Obfuscation.Obf
+        YLex.Lex YLex.Base YLex.Combinators YPar.Par
     build-depends: mtl, containers, extra, template-haskell, transformers, array
 
 executable parser
     import:           dflt
     hs-source-dirs:   exe
     main-is:          Main.hs
-    build-depends:    obfusc, process, mtl, random
+    build-depends:    ylexer, extra, containers
 
 
 -- Test-Suite test-basic

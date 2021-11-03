@@ -1,0 +1,12 @@
+name <== TName y -> y
+# and  <== TAnd -> ()
+# xor  <== TXor -> ()
+lpar <== TLParen -> ()
+rpar <== TRParen -> ()
+
+EXPR
+	| ATOM ==> id
+
+ATOM
+	| name ==> snd
+	| lpar EXPR rpar ==> const const
