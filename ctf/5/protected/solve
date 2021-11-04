@@ -1,0 +1,3 @@
+ltrace -e strcmp -s 999 ./protected.elf
+11
+protected.elf->strcmp("11", "flag_is_45c88eb25506dfc603afb78321140abe")

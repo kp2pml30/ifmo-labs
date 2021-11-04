@@ -1,0 +1,10 @@
+ltrace ./mc1.elf
+printf("Enter the long flag to verify: ")                                 = 31
+__isoc99_scanf(0x562e63000978, 0x7fff26a307e0, 0, 0Enter the long flag to verify: V3ry_L0ng_f14g_70_4nn0y_3v3ryb0dY_wh0_r3V3rS3S_1t
+)                      = 1
+strncmp("V3ry_L0ng_f14g_70_4nn0y_3v3ryb0d"..., "V3ry_L0ng_f14g_70_4n", 20) = 0
+strcmp("Y_wh0_r3V3rS3S_1t", "Y_wh0_r3V3rS3S_1t")                          = 0
+strncmp("n0y_3v3ryb0dY_wh0_r3V3rS3S_1t", "n0y_3v3ryb0d", 12)              = 0
+puts("Correct!"Correct!
+)                                                          = 9
++++ exited (status 0) +++

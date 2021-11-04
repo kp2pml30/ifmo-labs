@@ -1,0 +1,19 @@
+open("/tmp/flag.txt", O_WRONLY|O_CREAT|O_TRUNC, 0666) = 3
+fstat(3, {st_mode=S_IFREG|0644, st_size=0, ...}) = 0
+write(3, "flag_is_413d791790502b30842994da"..., 40) = 40
+close(3)                                = 0
+unlink("/tmp/flag.txt")                 = 0
+
+#### now start gdb
+
+(gdb) catch syscall unlink
+Catchpoint 1 (syscall 'unlink' [87])
+(gdb) r
+Starting program: /mnt/d/DiskZ/ifmo/labs/ctf/5/sprotected/sprotected.elf
+
+Catchpoint 1 (call to syscall unlink), 0x0000000000442ec7 in ?? ()
+
+### ok result
+
+cat /tmp/flag.txt
+flag_is_413d791790502b30842994da1ec6def4

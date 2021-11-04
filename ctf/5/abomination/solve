@@ -1,0 +1,7 @@
+ltrace ./abominate_language
+
+mmap(0, 0x40000, 3, 34)                                                                                          = 0x7fb2e018d000
+aaaa
+malloc(5)                                                                                                        = 0x12666d0
+malloc(29)                                                                                                       = 0x12666f0
+strcmp("flag{GO_iSTerrible_language}", "aaaa")

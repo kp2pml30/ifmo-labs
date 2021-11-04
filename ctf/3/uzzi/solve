@@ -1,0 +1,9 @@
+(gdb) break *0x8048569
+Breakpoint 1 at 0x8048569
+(gdb) r
+Starting program: /mnt/d/TEMP/ctf/3/uzzi/uzzi.elf
+Input valid serial key: >1
+
+Breakpoint 1, 0x08048569 in main ()
+(gdb) info registers eax
+eax            0x310c50b3          822890675

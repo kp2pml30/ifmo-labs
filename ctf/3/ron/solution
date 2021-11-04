@@ -1,0 +1,36 @@
+info proc mappings
+          Start Addr           End Addr       Size     Offset objfile
+           0x8000000          0x8001000     0x1000        0x0 /mnt/d/TEMP/ctf/3/ron/ron
+           0x8001000          0x8002000     0x1000     0x1000 /mnt/d/TEMP/ctf/3/ron/ron
+           0x8002000          0x8003000     0x1000     0x2000 /mnt/d/TEMP/ctf/3/ron/ron
+           0x8003000          0x8004000     0x1000     0x2000 /mnt/d/TEMP/ctf/3/ron/ron
+           0x8004000          0x8005000     0x1000     0x3000 /mnt/d/TEMP/ctf/3/ron/ron
+
+(gdb) print *(char*)(0x8000000 + 0x2029)
+$1 = -25 '\347'
+(gdb) print (char)0xe7
+$3 = -25 '\347'
+
+# rodata there
+
+readelf -e ron
+
+ [14] .text             PROGBITS         0000000000001080  00001080
+       0000000000000501  0000000000000000  AX       0     0     16
+
+(gdb) call (void)kp2hack(0x8000000 + 0x02029, 0x800138f)
+ok
+spbctf{blo // unsavable text
+
+change
+	E8 98 FD FF FF
+		call   0xfffffffffffffd9d
+to
+	 mov eax, 22
+		B816000000 
+
+(gdb) call (void)kp2hack(0x8000000 + 0x02029, 0x800138f)
+ok
+spbctf{blood_is_the_key}
+
+// call (void)kp2hack(0x8000000 + 0x02029, 0x800138f)

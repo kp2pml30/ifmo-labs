@@ -1,0 +1,1 @@
+kill -s 2 (pidof /mnt/d/TEMP/ctf/3/signalization2/signalization2.elf)

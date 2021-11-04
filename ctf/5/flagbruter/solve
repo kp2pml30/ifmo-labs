@@ -1,0 +1,3 @@
+kapuralu@LAPTOP-KAL0C1RR:/mnt/d/DiskZ/ifmo/labs/ctf/5/flagbruter$ ltrace -e memcpy ./flagbruter.elf 2> >(grep ', "[a-zA-Z0-9@_]*", 23')
+flagbruter.elf->memcpy(0x7ffccb5c4a50, "FLAGus_flagus_asparagus", 23)                                            = 0x7ffccb5c4a50
+^C

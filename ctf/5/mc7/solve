@@ -1,0 +1,2 @@
+(gdb) print (int)return_scary_number()
+$1 = 9247514

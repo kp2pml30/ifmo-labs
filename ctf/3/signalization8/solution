@@ -1,0 +1,3 @@
+kill -s 8 (pidof /mnt/d/TEMP/ctf/3/signalization8/signalization8.elf)
+это фиш а не баш
+Flag7TzTs _4hSimple}

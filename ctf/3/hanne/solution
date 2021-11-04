@@ -1,0 +1,5 @@
+wolfram
+
+((5x^2 mod 256) - 34x + 24)  == 0
+
+says 6 (one mod removed)

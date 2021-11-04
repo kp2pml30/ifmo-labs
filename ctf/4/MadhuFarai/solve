@@ -1,0 +1,7 @@
+Input number of points: >4 # least possible
+[#3] Input valid x and y: 4391 4 # store old
+[#2] Input valid x and y: -4 4   # 17564 = 4391 * 4, so we have answer + 16
+[#1] Input valid x and y: -4 4   # just keep old values
+[#0] Input valid x and y: 8 4    # solve x * -4 + y * 4 = -16
+Result: -17564
+You are welcome!

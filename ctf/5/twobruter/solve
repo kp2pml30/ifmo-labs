@@ -1,0 +1,6 @@
+patch file:
+
+/dev/null w+ -> /tmp/null at
+
+grep --text -i 'flag' /tmp/null
+flagardium_flagiosa

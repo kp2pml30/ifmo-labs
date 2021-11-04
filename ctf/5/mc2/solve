@@ -1,0 +1,15 @@
+ltrace ./mc2.elf
+puts("GUESS THE RANDOM game!"GUESS THE RANDOM game!
+)                                            = 23
+open("/dev/urandom", 0, 00)                                               = 3
+read(3, "\004+rU", 4)                                                     = 4
+srand(0x55722b04, 0x7ffc13b0906c, 4, 0x7f617d798142)                      = 0
+rand(0x7f617d872240, 0x7f617d872740, 0x7f617d8721c4, 0xffffffff)          = 0x56e35952
+printf("I'm thinking of a number... What"...)                             = 42
+__isoc99_scanf(0x5558afe0131b, 0x7ffc13b09068, 0, 0I'm thinking of a number... What is it? > 0x56e35952
+)                      = 1
+puts("Correct! Have the flag"Correct! Have the flag
+)                                            = 23
+puts("flag: Y3p_Numbah_Gu3ss3d"flag: Y3p_Numbah_Gu3ss3d
+)                                          = 25
++++ exited (status 0) +++

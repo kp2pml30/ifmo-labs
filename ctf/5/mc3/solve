@@ -1,0 +1,26 @@
+strace ./mc3.elf
+execve("./mc3.elf", ["./mc3.elf"], 0x7ffc9cb173e0 /* 23 vars */) = 0
+uname({sysname="Linux", nodename="LAPTOP-KAL0C1RR", ...}) = 0
+brk(NULL)                               = 0x1f64000
+brk(0x1f651c0)                          = 0x1f651c0
+arch_prctl(ARCH_SET_FS, 0x1f64880)      = 0
+readlink("/proc/self/exe", "/mnt/d/DiskZ/ifmo/labs/ctf/5/mc3"..., 4096) = 40
+brk(0x1f861c0)                          = 0x1f861c0
+brk(0x1f87000)                          = 0x1f87000
+access("/etc/ld.so.nohwcap", F_OK)      = -1 ENOENT (No such file or directory)
+fstat(1, {st_mode=S_IFCHR|0620, st_rdev=makedev(0x88, 0), ...}) = 0
+write(1, "Hello!\n", 7Hello!
+)                 = 7
+write(1, "Now i will write the flag somewh"..., 37Now i will write the flag somewhere.
+) = 37
+write(1, "See if you can find it!\n", 24See if you can find it!
+) = 24
+write(1337, "flag: c4ught_Wh4Ts_be1ng_wr1tten", 32) = -1 EBADF (Bad file descriptor)
+write(1, "Ok, it's there\n", 15Ok, it's there
+)        = 15
+write(1, "Dunno if it was written OK, but "..., 55Dunno if it was written OK, but i've done what i could
+) = 55
+write(1, "Good luck!\n", 11Good luck!
+)            = 11
+exit_group(0)                           = ?
++++ exited with 0 +++

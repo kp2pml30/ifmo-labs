@@ -1,0 +1,9 @@
+(gdb) info address main
+Symbol "main" is at 0x555555400857 in a file compiled without debugging.
+(gdb) break *0x5555554008B9
+(gdb) cont
+
+(gdb) info registers rdi
+rdi            0x555555601050      93824992940112
+(gdb) print (char*)0x555555601050
+$1 = 0x555555601050 <flag> "Flag{ehls_is_dTfineyti_a_flag}"

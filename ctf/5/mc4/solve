@@ -1,0 +1,55 @@
+strace ./mc4.elf
+execve("./mc4.elf", ["./mc4.elf"], 0x7ffebc73b6a0 /* 23 vars */) = 0
+uname({sysname="Linux", nodename="LAPTOP-KAL0C1RR", ...}) = 0
+brk(NULL)                               = 0x1c70000
+brk(0x1c711c0)                          = 0x1c711c0
+arch_prctl(ARCH_SET_FS, 0x1c70880)      = 0
+readlink("/proc/self/exe", "/mnt/d/DiskZ/ifmo/labs/ctf/5/mc4"..., 4096) = 40
+brk(0x1c921c0)                          = 0x1c921c0
+brk(0x1c93000)                          = 0x1c93000
+access("/etc/ld.so.nohwcap", F_OK)      = -1 ENOENT (No such file or directory)
+chdir(".")                              = 0
+chdir(".")                              = 0
+chdir("./F")                            = 0
+chdir("./..")                           = 0
+chdir("./F/L")                          = 0
+chdir("./../..")                        = 0
+chdir("./F/L/A")                        = 0
+chdir("./../../..")                     = 0
+chdir("./F/L/A/G")                      = 0
+chdir("./../../../..")                  = 0
+chdir("./F/L/A/G/_")                    = 0
+chdir("./../../../../..")               = 0
+chdir("./F/L/A/G/_/d")                  = 0
+chdir("./../../../../../..")            = 0
+chdir("./F/L/A/G/_/d/i")                = 0
+chdir("./../../../../../../..")         = 0
+chdir("./F/L/A/G/_/d/i/r")              = 0
+chdir("./../../../../../../../..")      = 0
+chdir("./F/L/A/G/_/d/i/r/s")            = 0
+chdir("./../../../../../../../../..")   = 0
+chdir("./F/L/A/G/_/d/i/r/s/_")          = 0
+chdir("./../../../../../../../../../..") = 0
+chdir("./F/L/A/G/_/d/i/r/s/_/D")        = 0
+chdir("./../../../../../../../../../../..") = 0
+chdir("./F/L/A/G/_/d/i/r/s/_/D/1")      = 0
+chdir("./../../../../../../../../../../../..") = 0
+chdir("./F/L/A/G/_/d/i/r/s/_/D/1/R")    = 0
+chdir("./../../../../../../../../../../../../..") = 0
+chdir("./F/L/A/G/_/d/i/r/s/_/D/1/R/S")  = 0
+chdir("./../../../../../../../../../../../../../..") = 0
+chdir("./F/L/A/G/_/d/i/r/s/_/D/1/R/S/_") = 0
+chdir("./../../../../../../../../../../../../../../..") = 0
+chdir("./F/L/A/G/_/d/i/r/s/_/D/1/R/S/_/Y") = 0
+chdir("./../../../../../../../../../../../../../../../..") = 0
+chdir("./F/L/A/G/_/d/i/r/s/_/D/1/R/S/_/Y/E") = 0
+chdir("./../../../../../../../../../../../../../../../../..") = 0
+chdir("./F/L/A/G/_/d/i/r/s/_/D/1/R/S/_/Y/E/S") = 0
+chdir("./../../../../../../../../../../../../../../../../../..") = 0
+chdir("./F/L/A/G/_/d/i/r/s/_/D/1/R/S/_/Y/E/S/S") = 0
+chdir("./../../../../../../../../../../../../../../../../../../..") = 0
+fstat(1, {st_mode=S_IFCHR|0620, st_rdev=makedev(0x88, 0), ...}) = 0
+write(1, "Cool! I've checked all the dirs!"..., 64Cool! I've checked all the dirs! The path without / is the flag
+) = 64
+exit_group(0)                           = ?
++++ exited with 0 +++
