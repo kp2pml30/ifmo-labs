@@ -21,4 +21,4 @@ tokenize t u pre f =
 		parseMonad :: LexMonad us (Maybe a)
 		parseMonad = (parseEof >> return Nothing) <|> (Just <$> f)
 
-data TokensList a = TLEof | TLError !Position | TLCons !a !Position (TokensList a) deriving (Show)
+data TokensList a = TLEof | TLError !LexError | TLCons !a !Position (TokensList a) deriving (Show)

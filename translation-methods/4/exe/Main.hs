@@ -2,6 +2,9 @@
 
 module Main (main) where
 
+import Task2Common
+import Task2
+
 import YLex.Base
 import YLex.Lex
 import YLex.Combinators
@@ -9,24 +12,14 @@ import YLex.Combinators
 import YPar.Par
 
 import qualified Data.Text as Text
+import qualified Data.Text.IO as TextIO
+import System.IO (hPutStrLn, stderr)
+import System.Exit (exitFailure)
 import Data.Char
 import qualified Data.Map as Map
 import Control.Monad
 import Control.Applicative
-import Control.Monad.Extra
 import Data.String (IsString(..))
-
-data Token
-	= TLParen
-	| TRParen
-	| TMinus
-	| TAnd
-	| TOr
-	| TXor
-	| TNot
-	| TIn
-	| TName Text.Text
-	deriving (Show)
 
 skipWs = void $ parseStr isSpace
 
@@ -57,7 +50,9 @@ parseMain
 	<|> parseOpName
 
 main = do
-	print $ tokenize "  abc and or (ddd\n) errR a" () skipWs parseMain
+	let _ = tokenize "  abc and or (ddd\n) errR a" () skipWs parseMain
 	s <- getContents
-	print $ parseGrammar (fromString s)
+	case processGrammar <$> parseGrammar (fromString s) of
+		Left p -> hPutStrLn stderr ("Error occured " ++ show p) >> exitFailure
+		Right r -> TextIO.putStrLn r
 	return ()

@@ -21,17 +21,28 @@ data LexState us
 
 defaultLexState = flip LexState defaultPosition
 
+data LexError = LexError !String !Position deriving (Eq, Show)
+
 newtype LexMonad us a
-	= LexMonad (StateT (LexState us) (ExceptT Position Identity) a)
-	deriving newtype (Functor, Monad, Applicative, MonadState (LexState us), MonadError Position)
+	= LexMonad (StateT (LexState us) (ExceptT LexError Identity) a)
+	deriving newtype (Functor, Monad, Applicative, MonadState (LexState us), MonadError LexError)
 
 instance MonadPlus (LexMonad u) where
+
+throwErrorLE :: String -> Position -> LexMonad us a
+throwErrorLE a b = throwError $ LexError a b
+
+throwErrorPos :: Position -> LexMonad us a
+throwErrorPos = throwErrorLE ""
 
 parsePosition :: LexMonad us Position
 parsePosition = gets curPos
 
 parseError :: LexMonad us a
-parseError = parsePosition >>= throwError
+parseError = parsePosition >>= throwErrorPos
+
+parseErrorStr :: String -> LexMonad us a
+parseErrorStr s = parsePosition >>= throwErrorLE s
 
 instance Alternative (LexMonad us) where
 	empty = parseError

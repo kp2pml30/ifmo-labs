@@ -8,7 +8,6 @@ import Control.Monad.State
 import Control.Applicative
 import Control.Monad.Trans.Except
 import Control.Monad.Except
-import Control.Monad.Extra
 
 import YLex.Base
 
@@ -32,12 +31,12 @@ ensureNot f = do
 	b <- (f >> return True) `catchError` const (return False)
 	when b do
 		put s0
-		parsePosition >>= throwError
+		parsePosition >>= throwErrorPos
 
 parseEof :: LexMonad us ()
 parseEof = do
 	!t <- gets rest
-	unless (Text.null t) (gets curPos >>= throwError)
+	unless (Text.null t) (gets curPos >>= throwErrorLE "expected Eof")
 
 parseChar :: forall us. LexMonad us Char
 parseChar = do
@@ -83,7 +82,7 @@ parseStr f = do
 ensureNotEmpty :: LexMonad us Text.Text -> LexMonad us Text.Text
 ensureNotEmpty f = do
 	r <- f
-	when (Text.null r) parseError
+	when (Text.null r) $ parseErrorStr "non-empty check failed"
 	return r
 
 parseStrNE = ensureNotEmpty . parseStr
@@ -92,7 +91,7 @@ ensureString :: Text.Text -> LexMonad us ()
 ensureString s = do
 	let l = Text.length s
 	r <- gets rest
-	when (s /= Text.take l r) parseError
+	when (s /= Text.take l r) $ parseErrorStr ("expected " ++ Text.unpack s)
 	chopStr s
 
 noFail :: LexMonad us a -> LexMonad us ()
