@@ -144,6 +144,7 @@ makeVarRead = do
 	then makeIntLiteral
 	else do
 		r <- (`mod` Map.size mp) <$> fetchSeed
+		-- return $ snd $ Map.elemAt r mp -- problem on x64
 		return $ "(int)" ++ snd (Map.elemAt r mp)
 
 insertAtom :: Md

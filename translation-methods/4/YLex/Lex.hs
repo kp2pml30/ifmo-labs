@@ -1,3 +1,5 @@
+{-# LANGUAGE DeriveFunctor #-}
+
 module YLex.Lex where
 
 import qualified Data.Text as Text
@@ -16,9 +18,13 @@ tokenize t u pre f =
 			let res = runLexMonad (liftM2 (,) (pre >> gets curPos) parseMonad) s0 in
 			case res of
 				Left p -> TLError p
-				Right ((_, Nothing), _) -> TLEof
+				Right ((p, Nothing), _) -> TLEof p
 				Right ((p, Just !a), sn) -> TLCons a p (tokenize' sn)
 		parseMonad :: LexMonad us (Maybe a)
 		parseMonad = (parseEof >> return Nothing) <|> (Just <$> f)
 
-data TokensList a = TLEof | TLError !LexError | TLCons !a !Position (TokensList a) deriving (Show)
+data TokensList a
+	= TLEof !Position
+	| TLError !LexError
+	| TLCons !a !Position (TokensList a)
+	deriving (Show, Functor)

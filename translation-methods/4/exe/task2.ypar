@@ -3,24 +3,24 @@
 # first lines that start with "-- " are copied to file
 -- module Task2 (parse) where
 -- import Task2Common
+-- import Task2Expr
+-- import qualified Data.Text as Text
 
 %token Token
-%file ()
+%file Expr
 
 name  <== TName y
-# do not forget this newline, gets arguments as `\token position ->`, defaults to `(const . const) ()`
-# for short: `const2 ()`
-      ==> const
+# do not forget this newline, gets arguments has position at `pos` variable and token at `tok`, defaults to `()`
+      ==> y
 minus <== TMinus
-      ==> const2 Minus
+      ==> Minus
 and   <== TAnd
-      ==> const2 And
+      ==> And
 xor   <== TXor
-      ==> const2 Xor
+      ==> Xor
 or    <== TOr
-      ==> const2 Or
+      ==> Or
 in    <== TIn
-      ==> const2 In
 not   <== TNot
 lpar  <== TLParen
 rpar  <== TRParen
@@ -51,10 +51,10 @@ EXPR
 %oper l IN NOTIN OR
 
 NOTIN
-	| in     ==> \_ _ -> In
-	| not in ==> \l r -> Not $ In l r
+	| in     ==> \_  -> In
+	| not in ==> \_ _ l r -> Not $ In l r
 
 ATOM
-	| name           ==> snd
-	| not ATOM       ==> const . Not
+	| name           ==> Name . Text.unpack
+	| not ATOM       ==> const Not
 	| lpar EXPR rpar ==> const const

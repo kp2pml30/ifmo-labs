@@ -32,7 +32,7 @@ executable parser
     import:           dflt
     hs-source-dirs:   exe
     main-is:          Main.hs
-    other-modules:    Task2 Task2Common
+    other-modules:    Task2 Task2Common Task2Expr
     build-depends:    ylexer, extra, containers, mtl, transformers
 
 

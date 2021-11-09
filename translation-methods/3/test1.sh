@@ -37,7 +37,7 @@ echo "		lines rand != lines !rand"
 diff <(clang-format < $DIR/obf.c | wc -l) <(clang-format < $DIR/nrand.c | wc -l) > /dev/null && fail "	fail: same amount of lines" || true
 
 echo "		exec"
-GCC="gcc -Wno-implicit-function-declaration -Wno-builtin-declaration-mismatch -Wno-pointer-to-int-cast -Wno-trigraphs -Wno-overflow"
+GCC="gcc -Wno-implicit-function-declaration -Wno-builtin-declaration-mismatch -Wno-pointer-to-int-cast -Wno-trigraphs -Wno-overflow -m32"
 $GCC "$1" -o $DIR/original.o
 $GCC $DIR/obf.c -o $DIR/obf.o
 diff <($DIR/original.o) <($DIR/obf.o)

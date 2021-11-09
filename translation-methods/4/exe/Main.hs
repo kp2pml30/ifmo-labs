@@ -3,7 +3,7 @@
 module Main (main) where
 
 import Task2Common
-import Task2
+import qualified Task2
 
 import YLex.Base
 import YLex.Lex
@@ -50,9 +50,11 @@ parseMain
 	<|> parseOpName
 
 main = do
-	let _ = tokenize "  abc and or (ddd\n) errR a" () skipWs parseMain
 	s <- getContents
 	case processGrammar <$> parseGrammar (fromString s) of
 		Left p -> hPutStrLn stderr ("Error occured " ++ show p) >> exitFailure
 		Right r -> TextIO.putStrLn r
+	let toks = tokenize " not    abc and b or c" () skipWs parseMain
+	print $ toks
+	print $ Task2.parse toks
 	return ()

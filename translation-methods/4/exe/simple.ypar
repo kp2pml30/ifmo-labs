@@ -1,0 +1,26 @@
+# comment
+
+# first lines that start with "-- " are copied to file
+-- module Task2 (parse) where
+-- import Task2Common
+-- import qualified Data.Text as Text
+
+%token Token
+%file Text.Text
+
+name  <== TName y
+# do not forget this newline, gets arguments has position at `pos` variable and token at `tok`, defaults to `()`
+      ==> y
+not   <== TNot
+      ==> \x -> Text.pack "!" <> x
+minus <== TMinus
+      ==> \l r -> l <> Text.pack "-" <> r
+
+FILE
+	| MINUS ==> id
+
+%oper l MINUS minus ATOM
+
+ATOM
+	| name ==> id
+	| not ATOM ==> ($)

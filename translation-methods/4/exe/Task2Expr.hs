@@ -1,19 +1,18 @@
-module Pysets.Expr (Expr(..), shB, expr2Dot) where
+module Task2Expr (Expr(..), shB, expr2Dot) where
 
-import Pysets.Tokens
 import qualified Data.Sequence as Seq
 import Data.Sequence (Seq)
 import Control.Monad.State
 import Data.Foldable (toList)
 
 data Expr
-	= Not { expr :: Expr, ePos :: Position }
-	| Minus { lexpr :: Expr, rexpr :: Expr, ePos :: Position }
-	| And { lexpr :: Expr, rexpr :: Expr, ePos :: Position }
-	| Or { lexpr :: Expr, rexpr :: Expr, ePos :: Position }
-	| Xor { lexpr :: Expr, rexpr :: Expr, ePos :: Position }
-	| In { lexpr :: Expr, rexpr :: Expr, ePos :: Position }
-	| Name { name :: String, ePos :: Position }
+	= Not { expr :: Expr }
+	| Minus { lexpr :: Expr, rexpr :: Expr }
+	| And { lexpr :: Expr, rexpr :: Expr }
+	| Or { lexpr :: Expr, rexpr :: Expr }
+	| Xor { lexpr :: Expr, rexpr :: Expr }
+	| In { lexpr :: Expr, rexpr :: Expr }
+	| Name { name :: String }
 	deriving (Eq)
 
 instance Show Expr where
@@ -31,7 +30,7 @@ type ST a = State MyState a
 
 s2s = Seq.fromList
 
-append :: (Seq Char) -> ST ()
+append :: Seq Char -> ST ()
 append a = do
 	modify \s@MyState { ans } -> s { ans = ans <> a }
 
@@ -72,7 +71,3 @@ expr2Dot :: Expr -> String
 expr2Dot e = toList $ s2s "digraph T {" <> ans (execState (shwD e) (MyState 0 Seq.empty)) <> s2s "}"
 
 shB c e = "(" ++ show (lexpr e) ++ c ++ show (rexpr e) ++ ")"
-
-instance Pos Expr where
-	position = ePos
-

@@ -12,6 +12,7 @@ import Obfuscation.Obf
 %error { parseError }
 
 %token
+	type { TName n | n `elem` ["int", "char", "void"] }
 	return { TName "return" }
 	if { TName "if" }
 	else { TName "else" }
@@ -42,7 +43,10 @@ Func
 	: Type name '(' Arguments ')' '{' Body '}' { mkFunc ($1 ++ " " ++ $2) $4 (rndAction $7) }
 
 Type
-	: name Asteriscs { $1 ++ $2 }
+	: Unwraptype Asteriscs { $1 ++ $2 }
+
+Unwraptype
+	: type { let TName x = $1 in x }
 
 Asteriscs
 	: { "" }
