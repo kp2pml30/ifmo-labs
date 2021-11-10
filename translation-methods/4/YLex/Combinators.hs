@@ -56,12 +56,14 @@ parseCharIf f = do
 	unless (f c) parseError
 	return c
 
+-- | updates position (and rest) assuming that r is consumed
 chopStr :: Text.Text -> LexMonad us ()
 chopStr r = do
+	curPos <- gets $ col . curPos
 	let
 		!len = Text.length r
 		!nls = Text.length $ Text.filter (== '\n') r
-		lastNl = fromMaybe len $ Text.findIndex (== '\n') $ Text.reverse r
+		lastNl = fromMaybe (curPos + len) $ Text.findIndex (== '\n') $ Text.reverse r
 	str0 <- gets rest
 	updatePos (+ len) (+ nls) (const lastNl)
 	modify \s -> s { rest = Text.drop len str0 }

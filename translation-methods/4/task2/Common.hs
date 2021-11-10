@@ -1,4 +1,4 @@
-module Task2Common where
+module Common where
 
 import qualified Data.Text as Text
 

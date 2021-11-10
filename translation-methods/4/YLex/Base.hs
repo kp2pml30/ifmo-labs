@@ -21,7 +21,12 @@ data LexState us
 
 defaultLexState = flip LexState defaultPosition
 
-data LexError = LexError !String !Position deriving (Eq, Show)
+data LexError
+	= LexError
+		{ lexErrorMsg :: !String
+		, lexErrorPos :: !Position
+		}
+	deriving (Eq, Show)
 
 newtype LexMonad us a
 	= LexMonad (StateT (LexState us) (ExceptT LexError Identity) a)

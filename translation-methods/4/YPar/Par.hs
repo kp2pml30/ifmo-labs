@@ -73,7 +73,7 @@ parseOperator = do
 	skipWs
 	ensureString "%oper"
 	skipWs
-	_ <- (ensureString "l" >> return AssocLeft) <|> parseErrorStr "unknown associativity"
+	assoc <- (ensureString "l" >> return AssocLeft) <|> (ensureString "r" >> return AssocRight) <|> parseErrorStr "unknown associativity"
 	skipWs
 	name <- parseNTerminal
 	skipWs
@@ -84,10 +84,15 @@ parseOperator = do
 	action1 <- (ensureString "==>" >> skipWs >> parseRest) <|> return "id"
 	skipWs
 	let name' = name <> "'"
-	return
-		[ (name, [NTerminal [smaller, ANTerm name'] "\\l o -> o l"])
-		, (name', [NTerminal [] action1, NTerminal [op, smaller, ANTerm name'] "\\o r u l -> u (o l r)"])
-		]
+	return case assoc of
+			AssocLeft ->
+				[ (name, [NTerminal [smaller, ANTerm name'] "\\l o -> o l"])
+				, (name', [NTerminal [] action1, NTerminal [op, smaller, ANTerm name'] "\\o r u l -> u (o l r)"])
+				]
+			AssocRight ->
+				[ (name, [NTerminal [smaller, ANTerm name'] "\\l o -> o l"])
+				, (name', [NTerminal [] action1, NTerminal [op, smaller, ANTerm name'] "\\o r u l -> o l (u r)"])
+				]
 
 parseRule :: LexMonad () (Text.Text, [NTerminal])
 parseRule = do
@@ -191,6 +196,7 @@ processGrammar :: Grammar -> Text.Text
 processGrammar Grammar {..} =
 	let first = buildFirst $ nterminals >>= \(a, l) -> [(a, i, ntCond x) | (i, x) <- zip [0..] l] in
 	execWriter do
+			tellnl "{-# OPTIONS_GHC -w #-}"
 			mapM_ tellnl imports
 
 			tellnl "{- first"
@@ -232,6 +238,15 @@ processGrammar Grammar {..} =
 				\    TLCons a _ _ -> return $ snd a\n\
 				\\n"
 
+			tell "peekPos :: YGMonad Position\n\
+				\peekPos = do\n\
+				\  peek <- get\n\
+				\  case peek of\n\
+				\    TLError a -> throwError a\n\
+				\    TLEof p -> return p\n\
+				\    TLCons _ p _ -> return p\n\
+				\\n"
+
 			tell "fetchTerm :: YGMonad (Position, YGTok)\n\
 				\fetchTerm = do\n\
 				\  peek <- get\n\
@@ -243,8 +258,14 @@ processGrammar Grammar {..} =
 				\      return (p, fst a)\n\
 				\\n"
 
+			tell "ensureEof :: YGMonad ()\n\
+				\ensureEof = peekTerm >>= \\p -> case p of\n\
+				\    YGTEof -> return ()\n\
+				\    _ -> peekPos >>= \\pos -> throwError $ LexError (\"expected Eof got \" <> show p) pos \n\
+				\\n"
+
 			tellnl "parse :: TokensList YGTok -> Either LexError YGFile"
-			tellnl "parse = runIdentity . runExceptT . evalStateT parseFILE . ((\\x -> (x, mapTok x)) <$>)"
+			tellnl "parse = runIdentity . runExceptT . evalStateT (parseFILE <* ensureEof) . ((\\x -> (x, mapTok x)) <$>)"
 	where
 		mapTerm name Terminal { tCond } = tellnl $ "  " <> tCond <> " -> " <> terminalName name
 		makeParser :: First -> First -> Text.Text -> [NTerminal] -> Writer Text.Text ()
@@ -253,7 +274,7 @@ processGrammar Grammar {..} =
 			tellnl $ "parse" <> name <> " = do\n  peek <- peekTerm\n  case peek of"
 			mapM_ makeCase $ Map.toList $ first Map.! name
 			tellnl $ maybe
-				("    _ -> error $ \"can't parse `" <> name <> "` from `\" ++ drop 3 (show peek) ++ \"`\"")
+				("    _ -> peekPos >>= \\p -> throwError $ LexError (\"can't parse `" <> name <> "` from `\" ++ drop 3 (show peek) ++ \"`\") p")
 				(\s -> "    _ -> make" <> tshow s)
 				(Map.lookup "" $ first Map.! name)
 			tellnl $ "  where"

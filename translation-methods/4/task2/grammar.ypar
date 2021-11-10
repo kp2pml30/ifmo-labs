@@ -1,9 +1,9 @@
 # comment
 
 # first lines that start with "-- " are copied to file
--- module Task2 (parse) where
--- import Task2Common
--- import Task2Expr
+-- module Par (parse) where
+-- import Common
+-- import Expr
 -- import qualified Data.Text as Text
 
 %token Token
@@ -29,7 +29,7 @@ FILE
 	| EXPR ==> id
 
 EXPR
-	| OR ==> id
+	| IN ==> id
 
 %oper l MINUS minus ATOM
 

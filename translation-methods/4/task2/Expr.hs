@@ -1,4 +1,4 @@
-module Task2Expr (Expr(..), shB, expr2Dot) where
+module Expr (Expr(..), shB, expr2Dot) where
 
 import qualified Data.Sequence as Seq
 import Data.Sequence (Seq)

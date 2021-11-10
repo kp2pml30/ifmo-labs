@@ -22,23 +22,22 @@ common dflt
         -Wall -Wno-tabs -Wno-missing-signatures -Wno-name-shadowing
     default-extensions:  BangPatterns, RecordWildCards, NamedFieldPuns, BlockArguments, ScopedTypeVariables, DerivingStrategies, GeneralizedNewtypeDeriving, TupleSections
 
-library ylexer
+library ygrammargen
     import:           dflt
     exposed-modules:
         YLex.Lex YLex.Base YLex.Combinators YPar.Par
     build-depends: mtl, containers, extra, template-haskell, transformers, array
 
-executable parser
+executable ygrammar
     import:           dflt
     hs-source-dirs:   exe
     main-is:          Main.hs
-    other-modules:    Task2 Task2Common Task2Expr
-    build-depends:    ylexer, extra, containers, mtl, transformers
+    build-depends:    ygrammargen, extra, containers, mtl, transformers
 
-
--- Test-Suite test-basic
---		import:           dflt
---		type:             exitcode-stdio-1.0
---		hs-source-dirs:   test
---		main-is:          Main.hs
---		build-depends:    pysetslib, test-framework, test-framework-hunit, HUnit
+Test-Suite test2
+    import:           dflt
+    hs-source-dirs:   task2
+    main-is:          Main.hs
+    other-modules:    Par Common Expr
+    type:             exitcode-stdio-1.0
+    build-depends:    ygrammargen, test-framework, test-framework-hunit, HUnit, extra, containers, mtl, transformers
