@@ -71,6 +71,13 @@ mkIf c t =
 		((++ "}") <$> t)
 		-- eta reduced else
 
+mkWhile :: Md -> Md -> Md
+mkWhile c t =
+	liftM2 (++)
+		((\x -> "while(" ++ x ++ "){") <$> c)
+		((++ "}") <$> t)
+
+
 mkFunc :: String -> [(String, String)] -> Md -> Md
 mkFunc n a b = do
 	res <- mkArgs a
@@ -96,22 +103,28 @@ insId = return
 insRev :: Inserter
 insRev = return . reverse
 
+genI1O0Str i = 'I' : helperO i -- if even i then 'I' : helperO (i `div` 2) else 'O' : helperI (i `div` 2)
+			where
+				helperI 0 = ""
+				helperI i = (if even i then 'I' else '1') : helperO (i `div` 2)
+				helperO 0 = ""
+				helperO i = (if even i then 'O' else '0') : helperI (i `div` 2)
+
+insI1O0Bound :: Int
+insI1O0Bound = 2 ^ (30 :: Int)
+insI1O0Offset :: Int
+insI1O0Offset = 0xffff
+
 insI1O0 :: Inserter
 insI1O0 _ = do
 	size <- reader $ Map.size . names
-	seed <- fetchSeed
-	return $ genStr (size + seed)
-	where
-		genStr i =
-			(if even i then 'I' else 'O') : helper (i `div` 2)
-			where
-				helper 0 = ""
-				helper i = (case i `mod` 4 of
-					0 -> '0'
-					1 -> 'I'
-					2 -> '1'
-					3 -> 'O'
-					_ -> undefined) : helper (i `div` 4)
+	seed <- (\x -> x `mod` (insI1O0Bound  - insI1O0Offset) + insI1O0Bound) <$> fetchSeed
+	return $ genI1O0Str (size + seed)
+
+insI1O02 = do
+	seed <- (\x -> insI1O0Bound * 2 - x `mod` insI1O0Offset) <$> fetchSeed
+	return $ genI1O0Str seed
+
 
 evalParseHelp rnd seeds ins =
 	foldMap (runMd (cycle seeds) $ MyState Map.empty ins rnd)
@@ -174,7 +187,13 @@ insertExpr  =
 					]
 
 insertSmth :: Md
-insertSmth = (++ ";") <$> insertExpr
+insertSmth = join $ selectOneOf
+	[ (++ ";") <$> insertExpr
+	, liftM2
+			(\x v -> "int " ++ {- map (\c -> if c == 'O' then 'Q' else c) -} x ++ " = " ++ v ++ ";")
+			insI1O02
+			insertExpr
+	]
 
 evalParseRnd :: [Int] -> Inserter -> [Md] -> String
 evalParseRnd = evalParseHelp do

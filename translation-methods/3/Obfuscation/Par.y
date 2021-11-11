@@ -14,6 +14,7 @@ import Obfuscation.Obf
 %token
 	type { TName n | n `elem` ["int", "char", "void"] }
 	return { TName "return" }
+	while { TName "while" }
 	if { TName "if" }
 	else { TName "else" }
 	name { TName $$ }
@@ -76,6 +77,7 @@ Statement
 	| return ';' { return "return;" }
 	| return Expr ';' { (\x -> "return " ++ x ++ ";") `fmap` $2 }
 	| if '(' Expr ')' '{' Body '}' Else { mkIf $3 $6 $8 }
+	| while '(' Expr ')' '{' Body '}' { mkWhile $3 $6 }
 
 Else
 	: { return "" :: Md }
