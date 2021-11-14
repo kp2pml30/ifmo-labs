@@ -1,0 +1,31 @@
+CAFEBABE
+xor r
+ror 7
+xor DEADBEEF
+rol 15
+xor 13373389
+xor r
+
+== 395547A2
+
+
+тут контент
+
+(CAFEBABE ^ r) ror 7
+(CAFEBABE ror 7) ^ (r ror 7)
+7D95FD75 ^ (r ror 7)
+
+7D95FD75 ^ (r ror 7) ^ DEADBEEF
+A338439A ^ (r ror 7)
+
+(A338439A ^ (r ror 7)) rol 15
+(A338439A rol 15) ^ (r ror 7 rol 15)
+73546708 ^ (r rol E)
+
+73546708 ^ (r rol E) ^ 13373389
+60635481 ^ (r rol E)
+
+60635481 ^ (r rol E) ^ r
+
+60635481 ^ (r rol E) ^ r == 395547A2
+(r rol E) ^ r == 59361323

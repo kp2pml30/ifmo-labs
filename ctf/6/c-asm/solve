@@ -1,0 +1,24 @@
+c encoded
+
+1 sort
+2 min of 2
+3 gcd
+4 linear search
+5 is even switch
+
+
+
+c4 and asm2 have same moves
+asm2 looks like search: loop and jump when equal
+am3 jumps only forward => no cycles => min, it also selects number from stack and compares the,
+asm4 has 1 loop and idiv, is it gcd????
+asm5 has no loops and 4 jumps with assign with 0/1 and shr
+
+1-1
+2-3
+3-4
+4-2
+5-5
+
+
+1-1, 2-3, 3-4, 4-2, 5-5

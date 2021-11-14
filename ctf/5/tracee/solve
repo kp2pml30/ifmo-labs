@@ -1,0 +1,2 @@
+ ltrace -f ./tracee.elf
+[pid 1906] write(4, "PZWQMA^YYF_Sinnn\025K", 18 <unfinished ...>
