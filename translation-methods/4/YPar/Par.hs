@@ -4,6 +4,7 @@ module YPar.Par (Grammar(..), parseGrammar, processGrammar) where
 
 import qualified Data.Text as Text
 import qualified Data.Map  as Map
+import qualified Data.Set  as Set
 import Data.Char
 import Data.Foldable
 import Control.Applicative
@@ -13,6 +14,7 @@ import Control.Monad.Writer (Writer, execWriter, tell)
 import YLex.Base
 import YLex.Combinators
 
+tshow :: Show s => s -> Text.Text
 tshow = Text.pack . show
 
 data Terminal
@@ -38,7 +40,7 @@ data Grammar
 	= Grammar
 		{ imports    :: [Text.Text]
 		, tokenType  :: Text.Text
-		, fileType  :: Text.Text
+		, fileType   :: Text.Text
 		, terminals  :: [(Text.Text, [Terminal])]
 		, nterminals :: [(Text.Text, [NTerminal])]
 		}
@@ -111,12 +113,12 @@ parseRule = do
 parseGrammar :: Text.Text -> Either LexError Grammar
 parseGrammar t = fst <$> runLexMonad
 		(do
-			r <- liftM5 Grammar
-				(many parseImport)
-				(skipWs >> ensureString "%token " >> parseRest)
-				(skipWs >> ensureString "%file " >> parseRest)
-				(some parseCase)
-				(concat <$> some (parseOperator <|> (:[]) <$> parseRule))
+			r <- Grammar
+				<$> (many parseImport)
+				<*> (skipWs >> ensureString "%token " >> parseRest)
+				<*> (skipWs >> ensureString "%file " >> parseRest)
+				<*> (some parseCase)
+				<*> (concat <$> some (parseOperator <|> (:[]) <$> parseRule))
 			skipWs
 			parseEof
 			return r)
@@ -137,13 +139,19 @@ makeTerminals t = do
 
 type First = Map.Map Text.Text (Map.Map Text.Text Int)
 
+type Follow = Map.Map Text.Text (Set.Set Text.Text)
+
 checkedMerge k a b =
 	if a /= b
-	then
-		if k == ""
-		then a
-		else error $ "can't merge " ++ show a ++ " and " ++ show b ++ " for " ++ show k
+	then error $ "can't merge " ++ show a ++ " and " ++ show b ++ " for " ++ show k
 	else a
+
+whileChanges :: Eq a => (a -> a) -> a -> a
+whileChanges f old =
+	let new = f old in
+	if old /= new
+	then whileChanges f new
+	else old
 
 buildFirst :: [(Text.Text, Int, [NTAtom])] -> First
 buildFirst l =
@@ -161,12 +169,7 @@ buildFirst l =
 					then folder nxt (k, i, tail)
 					else nxt
 			in foldl' folder st newRules
-		spin old =
-			let new = update old in
-			if new /= old
-			then spin new
-			else old
-	in spin strt
+	in whileChanges update strt
 	where
 		initializeWithTerminals :: ([(Text.Text, Int, [NTAtom])], First)
 		initializeWithTerminals =
@@ -184,6 +187,31 @@ buildFirst l =
 						_ -> ((nt, i, rule):al, am)
 			in foldl' folder ([], start) l
 
+applyWhen :: Bool -> (a -> a) -> a -> a
+applyWhen False _ a = a
+applyWhen True f a = f a
+
+buildFollow :: First -> [(Text.Text, Int, [NTAtom])] -> Follow
+buildFollow first' l =
+	let
+		first = Map.keysSet <$> first'
+		initial :: Follow
+		initial = Map.adjust (Set.insert "") "FILE" $ Set.empty <$ first
+		updateOne follow (a, _, atoms) =
+			let
+				updateOneOne :: NTAtom -> (Follow, Set.Set Text.Text) -> (Follow, Set.Set Text.Text)
+				updateOneOne (ATerm b) (follow, _) = (follow, Set.singleton b)
+				updateOneOne (ANTerm b) (follow, gammafst) =
+					let bfirst = first Map.! b in
+					let changed = Map.adjust (Set.union $ Set.delete "" gammafst) b follow in
+					( applyWhen ("" `Set.member` gammafst) (Map.adjust (Set.union $ changed Map.! a) b) changed
+					, if "" `Set.member` (first Map.! b) then gammafst `Set.union` bfirst else bfirst
+					) in
+			fst $ foldr updateOneOne (follow, Set.singleton "") atoms
+		update follow = foldl' updateOne follow l
+	in
+	whileChanges update initial
+
 tellnl :: Text.Text -> Writer Text.Text ()
 tellnl = tell . (<> "\n")
 
@@ -192,15 +220,26 @@ showFirst first =
 	execWriter do
 		mapM_ (\(k, v) -> tellnl k >> mapM_ (\(k, v) -> tellnl ("\t" <> k <> "\t" <> tshow v)) (Map.toList v)) $ Map.toList first
 
+showFollow :: Follow -> Text.Text
+showFollow first =
+	execWriter do
+		mapM_ (\(k, v) -> tellnl k >> mapM_ (tellnl . ("\t" <>)) v) $ Map.toList first
+
 processGrammar :: Grammar -> Text.Text
 processGrammar Grammar {..} =
-	let first = buildFirst $ nterminals >>= \(a, l) -> [(a, i, ntCond x) | (i, x) <- zip [0..] l] in
+	let
+		!catNTerminals = nterminals >>= \(a, l) -> [(a, i, ntCond x) | (i, x) <- zip [0..] l]
+		!first = buildFirst catNTerminals
+		!follow = buildFollow first catNTerminals in
 	execWriter do
 			tellnl "{-# OPTIONS_GHC -w #-}"
 			mapM_ tellnl imports
 
-			tellnl "{- first"
+			tellnl "{-"
+			tellnl " -- first --"
 			tellnl $ showFirst first
+			tellnl " -- follow --"
+			tellnl $ showFollow follow
 			tellnl "-}"
 
 			tellnl "import Control.Monad.Identity"
@@ -226,7 +265,7 @@ processGrammar Grammar {..} =
 
 			mapM_ (uncurry makeBreaker) (terminals >>= \(n, ca) -> zip (repeat n) ca)
 			tellnl ""
-			mapM_ (uncurry $ makeParser first undefined) nterminals
+			mapM_ (uncurry $ makeParser first follow) nterminals
 			tellnl ""
 
 			tell "peekTerm :: YGMonad YGTerminal\n\
@@ -268,15 +307,22 @@ processGrammar Grammar {..} =
 			tellnl "parse = runIdentity . runExceptT . evalStateT (parseFILE <* ensureEof) . ((\\x -> (x, mapTok x)) <$>)"
 	where
 		mapTerm name Terminal { tCond } = tellnl $ "  " <> tCond <> " -> " <> terminalName name
-		makeParser :: First -> First -> Text.Text -> [NTerminal] -> Writer Text.Text ()
-		makeParser first _ name alternatives = do
+		makeParser :: First -> Follow -> Text.Text -> [NTerminal] -> Writer Text.Text ()
+		makeParser first follow name alternatives = do
 			when (name == "FILE") $ tellnl "parseFILE :: YGMonad YGFile"
 			tellnl $ "parse" <> name <> " = do\n  peek <- peekTerm\n  case peek of"
 			mapM_ makeCase $ Map.toList $ first Map.! name
-			tellnl $ maybe
-				("    _ -> peekPos >>= \\p -> throwError $ LexError (\"can't parse `" <> name <> "` from `\" ++ drop 3 (show peek) ++ \"`\") p")
-				(\s -> "    _ -> make" <> tshow s)
+			let
+				makeFollowed f = do
+					let
+						!myFollow' = follow Map.! name
+						!myFollow = Set.delete "" myFollow'
+					mapM_ (f . terminalName) myFollow
+					when ("" `Set.member` myFollow') (f "YGTEof")
+			mapM_
+				(\i -> makeFollowed (\s -> tellnl $ "    " <> s <> " -> make" <> tshow i))
 				(Map.lookup "" $ first Map.! name)
+			tellnl $ "    _ -> peekPos >>= \\p -> throwError $ LexError (\"can't parse `" <> name <> "` from `\" ++ drop 3 (show peek) ++ \"`\") p"
 			tellnl $ "  where"
 			mapM_ (uncurry makeAlt) $ zip [0 :: Int ..] alternatives
 			where
@@ -286,7 +332,7 @@ processGrammar Grammar {..} =
 					tellnl $ "    make" <> tshow i <> " = do"
 					zipWithM_
 						(\i x -> tell ("      v" <> tshow i <> " <- ") >> mkAct x)
-						[0..]
+						[0 :: Int ..]
 						ntCond
 					tell $ "      return $ (" <> ntAction <> ")"
 					let !n = length ntCond
