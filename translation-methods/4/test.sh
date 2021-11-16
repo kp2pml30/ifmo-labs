@@ -2,6 +2,12 @@
 
 cabal build ygrammar
 
+cat calc/grammar.ypar | cabal -v0 run ygrammar > calc/Par.hs
+cabal run testcalc
+
+cat inh/grammar.ypar | cabal -v0 run ygrammar > inh/Par.hs
+cabal run testinh
+
 cat task2/grammar.ypar | cabal -v0 run ygrammar > task2/Par.hs
 cabal run test2
 

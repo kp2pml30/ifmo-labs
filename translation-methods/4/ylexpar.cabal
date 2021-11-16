@@ -34,6 +34,14 @@ executable ygrammar
     main-is:          Main.hs
     build-depends:    ygrammargen, extra, containers, mtl, transformers
 
+Test-Suite testcalc
+    import:           dflt
+    hs-source-dirs:   calc
+    main-is:          Main.hs
+    other-modules:    Par Lex
+    type:             exitcode-stdio-1.0
+    build-depends:    ygrammargen, test-framework, test-framework-hunit, HUnit, extra, containers, mtl, transformers
+
 Test-Suite test2
     import:           dflt
     hs-source-dirs:   task2
@@ -49,3 +57,10 @@ executable task3
     other-modules:    Obfuscation.Lex Obfuscation.ParGen Obfuscation.Par Obfuscation.Obf Obfuscation.Tokens
     build-depends:    ygrammargen, extra, containers, mtl, transformers, random
 
+Test-Suite testinh
+    import:           dflt
+    hs-source-dirs:   inh
+    main-is:          Main.hs
+    other-modules:    Par Lex
+    type:             exitcode-stdio-1.0
+    build-depends:    ygrammargen, test-framework, test-framework-hunit, HUnit, extra, containers, mtl, transformers

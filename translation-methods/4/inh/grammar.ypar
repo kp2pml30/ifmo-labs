@@ -1,0 +1,13 @@
+-- module Par (parse) where
+-- import Lex
+-- import Control.Monad.Reader
+
+%token Token
+%file Reader Int Tree
+
+b <== TB
+n <== TN
+
+FILE
+	| b FILE FILE ==> \_ l r -> (local (+ 1) $ Branch <$> l <*> r) <*> ask
+	| n ==> const $ return Leaf

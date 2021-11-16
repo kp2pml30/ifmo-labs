@@ -1,0 +1,32 @@
+-- module Par (parse) where
+-- import Lex
+
+%token Token
+%file Int
+
+num <== TNum y
+ ==> y
+addsub <== TSub
+ ==> (-)
+addsub <== TAdd
+ ==> (+)
+muldiv <== TMul
+ ==> (*)
+muldiv <== TDiv
+ ==> div
+lpar <== TLParen
+rpar <== TRParen
+
+FILE
+	| EXPR ==> id
+
+EXPR
+	| ADDSUB ==> id
+
+%oper l ADDSUB addsub MULDIV
+%oper l MULDIV muldiv ATOM
+
+ATOM
+	| num ==> id
+	| lpar EXPR rpar ==> const const
+
