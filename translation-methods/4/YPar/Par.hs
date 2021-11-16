@@ -6,6 +6,7 @@ import qualified Data.Text as Text
 import qualified Data.Map  as Map
 import qualified Data.Set  as Set
 import Data.Char
+import Data.List (group, sort)
 import Data.Foldable
 import Control.Applicative
 import Control.Monad
@@ -130,7 +131,7 @@ terminalName s = "YGT" <> Text.pack [toUpper $ Text.head s] <> Text.drop 1 s
 
 makeTerminals :: [(Text.Text, [Terminal])] -> Writer Text.Text ()
 makeTerminals t = do
-	let l = map (terminalName . fst) t
+	let l = map head $ group $ sort $ map (terminalName . fst) t
 	tell "data YGTerminal"
 	tell $ "\n  = " <> head l
 	mapM_ (\x -> tell $ "\n  | " <> x) (tail l)
@@ -141,9 +142,9 @@ type First = Map.Map Text.Text (Map.Map Text.Text Int)
 
 type Follow = Map.Map Text.Text (Set.Set Text.Text)
 
-checkedMerge k a b =
+checkedMerge err k a b =
 	if a /= b
-	then error $ "can't merge " ++ show a ++ " and " ++ show b ++ " for " ++ show k
+	then error $ "can't merge " ++ show a ++ " and " ++ show b ++ " for " ++ show k ++ "\n" ++ err
 	else a
 
 whileChanges :: Eq a => (a -> a) -> a -> a
@@ -161,10 +162,20 @@ buildFirst l =
 			let
 				folder :: First -> (Text.Text, Int, [NTAtom]) -> First
 				folder accum (_, _, []) = accum
-				folder accum (k, i, ATerm a : _) = Map.adjust (Map.insertWithKey checkedMerge a i) k accum
+				folder accum (k, i, ATerm a : _) =
+					Map.adjust
+						(Map.insertWithKey
+							(checkedMerge $ "populating " ++ Text.unpack k)
+							a
+							i)
+						k
+						accum
 				folder accum (k, i, ANTerm a : tail) =
 					let aset = i <$ accum Map.! a in
-					let nxt = Map.adjust (Map.unionWithKey checkedMerge aset) k accum in
+					let nxt = Map.adjust
+						(Map.unionWithKey (checkedMerge $ "populating " ++ Text.unpack k) aset)
+						k
+						accum in
 					if "" `Map.member` aset
 					then folder nxt (k, i, tail)
 					else nxt
@@ -183,7 +194,15 @@ buildFirst l =
 				folder (al, am) (nt, i, rule) =
 					case rule of
 						[] -> (al, Map.adjust (Map.insert "" i) nt am)
-						ATerm term : _ -> (al, Map.adjust (Map.insertWithKey checkedMerge term i) nt am)
+						ATerm term : _ ->
+							( al
+							, Map.adjust
+								(Map.insertWithKey
+									(checkedMerge $ "during initialization of " ++ Text.unpack nt)
+									term
+									i)
+								nt
+								am)
 						_ -> ((nt, i, rule):al, am)
 			in foldl' folder ([], start) l
 

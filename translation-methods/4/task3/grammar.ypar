@@ -1,0 +1,116 @@
+-- module Obfuscation.ParGen (parse) where
+-- import Obfuscation.Tokens
+-- import Control.Monad
+-- import Obfuscation.Tokens
+-- import Obfuscation.Obf
+
+%token Token
+%file [Md]
+
+type    <== TName "int"
+        ==> "int"
+type    <== TName "char"
+        ==> "char"
+type    <== TName "void"
+        ==> "void"
+return  <== TName "return"
+while   <== TName "while"
+if      <== TName "if"
+else    <== TName "else"
+name    <== TName y
+        ==> y
+literal <== TLiteral y
+        ==> y
+set     <== TSet
+lpar    <== TLParen
+rpar    <== TRParen
+lcpar   <== TLCParen
+rcpar   <== TRCParen
+comma   <== TComma
+scol    <== TSColon
+addsub  <== TAdd
+        ==> bopLift "+"
+addsub  <== TSub
+        ==> bopLift "-"
+mul     <== TMul
+div     <== TDiv
+
+FILE
+	| ==> []
+	| FUNC FILE ==> (:)
+
+FUNC
+	| TYPE name lpar MBARGS rpar lcpar BODY rcpar ==> \t n _ args _ _ body _ -> mkFunc (t ++ " " ++ n) args (rndAction body)
+
+TYPE
+	| type ASTERISCS ==> (++)
+
+ASTERISCS
+	| ==> ""
+	| mul ASTERISCS ==> \_ -> ('*':)
+
+MBARGS
+	| ==> []
+	| ARGS ==> id
+
+%oper r ARGS ARGSCOMMA ARG ==> (\x -> [x] :: [(String, String)])
+
+ARGSCOMMA
+	| comma ==> const (:)
+
+ARG
+	| TYPE name ==> \t n -> (t, n) :: (String, String)
+
+BODY
+	| ==> rndAction (return "")
+	| STATEMENT BODY ==> \s b -> rndAction $ liftM2 (++) s b
+	| DECL BODY ==> \d b -> rndAction $ bodyDecl d b
+
+DECL
+	| type name set EXPR scol ==> \t n _ e _ -> (t, n, e)
+
+STATEMENT
+	| EXPR scol ==> \e _ -> (++ ";") <$> e
+	| return MBEXPR scol ==> \_ e _ -> (\x -> "return " ++ x ++ ";") <$> e
+	| if lpar EXPR rpar lcpar BODY rcpar ELSE ==> \_ _ c _ _ b _ e -> mkIf c b e
+	| while lpar EXPR rpar lcpar BODY rcpar ==> \_ _ c _ _ b _ -> mkWhile c b
+
+MBEXPR
+	| ==> return "" :: Md
+	| EXPR ==> id
+
+ELSE
+	| ==> return "" :: Md
+	| else lcpar BODY rcpar ==> \_ _ b _ -> (\x -> "else{" ++ x ++ "}") <$> b
+
+EXPR
+	| ADDSUB ==> id
+
+%oper l ADDSUB addsub MULDIV
+
+%oper l MULDIV MULDIVOP CALL
+
+MULDIVOP
+	| mul ==> const (bopLift "*")
+	| div ==> const (bopLift "/")
+
+CALL
+	| ATOM MBCALL ==> liftM2 (++)
+
+MBCALL
+	| ==> return ""
+	| lpar MBCALLARGS rpar ==> \_ ca _ -> (\x -> "(" ++ x ++ ")") <$> ca
+
+MBCALLARGS
+	| ==> return ""
+	| CALLARGS ==> id
+
+%oper r CALLARGS CALLARGSCOMMA EXPR
+
+CALLARGSCOMMA
+	| comma ==> const $ bopLift ","
+
+ATOM
+	| name ==> mkName
+	| literal ==> return
+	| lpar EXPR rpar ==> \_ e _ -> (\s -> "(" ++ s ++ ")") <$> e

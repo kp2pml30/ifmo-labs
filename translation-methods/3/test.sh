@@ -14,8 +14,11 @@ showinfo | column -s '--' -t
 echo ""
 echo "-= testing =-"
 
-for f in test/*.c
+# SCRIPT_DIR="$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )"
+SCRIPT_DIR="$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")"
+
+for f in $(find "$SCRIPT_DIR/test/" -name '*.c')
 do
-	./test1.sh "$f"
+	"$SCRIPT_DIR/test1.sh" "$f"
 done
 

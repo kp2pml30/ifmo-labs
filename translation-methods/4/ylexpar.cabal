@@ -41,3 +41,11 @@ Test-Suite test2
     other-modules:    Par Common Expr
     type:             exitcode-stdio-1.0
     build-depends:    ygrammargen, test-framework, test-framework-hunit, HUnit, extra, containers, mtl, transformers
+
+executable task3
+    import:           dflt
+    hs-source-dirs:   task3
+    main-is:          Main.hs
+    other-modules:    Obfuscation.Lex Obfuscation.ParGen Obfuscation.Par Obfuscation.Obf Obfuscation.Tokens
+    build-depends:    ygrammargen, extra, containers, mtl, transformers, random
+

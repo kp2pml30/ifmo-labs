@@ -17,11 +17,14 @@ fi
 
 echo "> test $1"
 
-CABAL="cabal -v0 run parser --"
+if [ -z "$CABAL" ]
+then
+	CABAL="cabal -v0 run parser --"
+fi
 
 echo "		minify"
 awk 'NF' $1 | clang-format > $DIR/nonl.c
-cabal -v0 run parser -- --id < $1 | clang-format > $DIR/minified.c
+$CABAL --id < $1 | clang-format > $DIR/minified.c
 git diff $DIR/nonl.c $DIR/minified.c
 
 echo "		!rand"
