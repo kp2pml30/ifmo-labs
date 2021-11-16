@@ -8,9 +8,6 @@ xor r
 
 == 395547A2
 
-
-тут контент
-
 (CAFEBABE ^ r) ror 7
 (CAFEBABE ror 7) ^ (r ror 7)
 7D95FD75 ^ (r ror 7)
