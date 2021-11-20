@@ -6,7 +6,8 @@ import qualified Obfuscation.ParGen as PG
 
 import Obfuscation.Obf
 import Obfuscation.Tokens
-import YLex.Lex
+
+import Yada.ParGen.Combinator
 
 parse :: TokensList Token -> [Md]
 parse lst = case PG.parse lst of

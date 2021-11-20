@@ -1,6 +1,6 @@
 {-# LANGUAGE OverloadedStrings #-}
 
-module YPar.Par (Grammar(..), parseGrammar, processGrammar) where
+module Yada.ParGen.Par (Grammar(..), parseGrammar, processGrammar) where
 
 import qualified Data.Text as Text
 import qualified Data.Map  as Map
@@ -12,8 +12,7 @@ import Control.Applicative
 import Control.Monad
 import Control.Monad.Writer (Writer, execWriter, tell)
 
-import YLex.Base
-import YLex.Combinators
+import Yada.ParGen.Combinator
 
 tshow :: Show s => s -> Text.Text
 tshow = Text.pack . show
@@ -47,12 +46,12 @@ data Grammar
 		}
 	deriving (Eq, Show)
 
-skipWs = parseStr isSpace >> noFail (parseCharIf (== '#') >> parseStr (/= '\n') >> skipWs)
+skipWs = parseWhile isSpace >> noFail (parseCharIf (== '#') >> parseWhile (/= '\n') >> skipWs)
 
-parseRest = parseStr (/= '\n')
+parseRest = parseWhile (/= '\n')
 
-parseTerminal = parseStrNE isAsciiLower
-parseNTerminal = parseStrNE isAsciiUpper
+parseTerminal = parseWhileNE isAsciiLower
+parseNTerminal = parseWhileNE isAsciiUpper
 
 parseNTorT = ANTerm <$> parseNTerminal <|> ATerm <$> parseTerminal
 
@@ -244,6 +243,20 @@ showFollow first =
 	execWriter do
 		mapM_ (\(k, v) -> tellnl k >> mapM_ (tellnl . ("\t" <>)) v) $ Map.toList first
 
+insertApplicative :: [Text.Text] -> Writer Text.Text ()
+insertApplicative [] = tell " <$ return ()"
+insertApplicative (x:xs) = do
+	tell " <$> "
+	tell x
+	helper xs
+	where
+		helper :: [Text.Text] -> Writer Text.Text ()
+		helper [] = return ()
+		helper (x:xs) = do
+			tell " <*> "
+			tell x
+			helper xs
+
 processGrammar :: Grammar -> Text.Text
 processGrammar Grammar {..} =
 	let
@@ -261,28 +274,27 @@ processGrammar Grammar {..} =
 			tellnl $ showFollow follow
 			tellnl "-}"
 
-			tellnl "import Control.Monad.Identity"
-			tellnl "import Control.Monad.Except"
-			tellnl "import Control.Monad.Trans.Except"
-			tellnl "import Control.Monad.State"
-			tellnl "import YLex.Lex (TokensList(..))"
-			tellnl "import YLex.Base (LexError(..), Position)"
-			tellnl ""
+			tell "import Control.Monad.Identity\n\
+				\import Control.Monad.Except\n\
+				\import Control.Monad.Trans.Except\n\
+				\import Control.Monad.State\n\
+				\import Yada.ParGen.Combinator (TokensList(..), LexError(..), Position)\n\
+				\\n"
 
 			makeTerminals terminals
 			tellnl ""
 
 			tellnl $ "type YGTok = " <> tokenType
 			tellnl $ "type YGFile = " <> fileType
-			tellnl $ "type YGMonad = StateT (TokensList (YGTok, YGTerminal)) (ExceptT LexError Identity)"
+			tellnl "type YGMonad = StateT (TokensList (YGTok, YGTerminal)) (ExceptT LexError Identity)"
 			tellnl ""
 
-			tellnl "mapTok :: YGTok -> YGTerminal"
-			tellnl "mapTok tok = case tok of"
+			tell "mapTok :: YGTok -> YGTerminal\n\
+				\mapTok tok = case tok of\n"
 			mapM_ (\(name, cases) -> mapM_ (mapTerm name) cases) terminals
 			tellnl ""
 
-			mapM_ (uncurry makeBreaker) (terminals >>= \(n, ca) -> zip (repeat n) ca)
+			mapM_ makeBreaker terminals
 			tellnl ""
 			mapM_ (uncurry $ makeParser first follow) nterminals
 			tellnl ""
@@ -322,8 +334,8 @@ processGrammar Grammar {..} =
 				\    _ -> peekPos >>= \\pos -> throwError $ LexError (\"expected Eof got \" <> show p) pos \n\
 				\\n"
 
-			tellnl "parse :: TokensList YGTok -> Either LexError YGFile"
-			tellnl "parse = runIdentity . runExceptT . evalStateT (parseFILE <* ensureEof) . ((\\x -> (x, mapTok x)) <$>)"
+			tellnl "parse :: TokensList YGTok -> Either LexError YGFile\n\
+				\parse = runIdentity . runExceptT . evalStateT (parseFILE <* ensureEof) . ((\\x -> (x, mapTok x)) <$>)"
 	where
 		mapTerm name Terminal { tCond } = tellnl $ "  " <> tCond <> " -> " <> terminalName name
 		makeParser :: First -> Follow -> Text.Text -> [NTerminal] -> Writer Text.Text ()
@@ -348,19 +360,15 @@ processGrammar Grammar {..} =
 				makeCase (k, v) =
 					when (k /= "") $ tellnl $ "    " <> terminalName k <> " -> make" <> tshow v
 				makeAlt i NTerminal {..} = do
-					tellnl $ "    make" <> tshow i <> " = do"
-					zipWithM_
-						(\i x -> tell ("      v" <> tshow i <> " <- ") >> mkAct x)
-						[0 :: Int ..]
-						ntCond
-					tell $ "      return $ (" <> ntAction <> ")"
-					let !n = length ntCond
-					mapM_ (\x -> tell $ " v" <> tshow x) [0..n - 1]
+					tell $ "    make" <> tshow i <> " = (" <> ntAction <> ")"
+					insertApplicative $ map mkAct ntCond
 					tellnl ""
-				mkAct :: NTAtom -> Writer Text.Text ()
-				mkAct (ATerm a) = tellnl $ "break" <> a <> " <$> fetchTerm"
-				mkAct (ANTerm a) = tellnl $ "parse" <> a
-		makeBreaker :: Text.Text -> Terminal -> Writer Text.Text ()
-		makeBreaker name Terminal {..} = do
-			tellnl $ "break" <> name <> " (pos, tok@(" <> tCond <> ")) = " <> tAction
-
+				mkAct :: NTAtom -> Text.Text
+				mkAct (ATerm a) = "fbreak" <> a
+				mkAct (ANTerm a) = "parse" <> a
+		makeBreaker :: (Text.Text, [Terminal]) -> Writer Text.Text ()
+		makeBreaker (name, alts) = do
+			tellnl $ "fbreak" <> name <> " = break" <> name <> " <$> fetchTerm"
+			tellnl $ "break" <> name <> " (pos, tok) = case tok of"
+			mapM_ (\Terminal {..} -> tellnl $ "  " <> tCond <> " -> " <> tAction) alts
+			-- tellnl $ "  _ -> peekPos >>= \\pos -> throwError $ LexError (\"can't break " <> name <> "\") pos"

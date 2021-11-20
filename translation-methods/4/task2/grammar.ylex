@@ -1,0 +1,27 @@
+-- {-# LANGUAGE OverloadedStrings #-}
+-- module Lex (parse) where
+
+%state ()
+%token Token
+
+import Common
+import Data.Char
+import qualified Data.Map  as Map
+
+parseWord = do
+	r <- parseWhileNE isAsciiLower
+	return r
+
+operators :: Map.Map Data.Text.Text Token
+operators = Map.fromList [("and", TAnd), ("or", TOr), ("xor", TXor), ("not", TNot), ("in", TIn)]
+
+parseOpName = do
+	s <- parseWord
+	maybe (return $ TName s) return (Map.lookup s operators)
+
+%token
+
+'(' ==> const TLParen
+')' ==> const TRParen
+'-' ==> const TMinus
+parseOpName ==> id

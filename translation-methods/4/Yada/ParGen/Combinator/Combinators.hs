@@ -1,4 +1,4 @@
-module YLex.Combinators where
+module Yada.ParGen.Combinator.Combinators where
 
 import qualified Data.Text as Text
 import Data.Maybe
@@ -9,7 +9,7 @@ import Control.Applicative
 import Control.Monad.Trans.Except
 import Control.Monad.Except
 
-import YLex.Base
+import Yada.ParGen.Combinator.Base
 
 updatePos :: (Int -> Int) -> (Int -> Int) -> (Int -> Int) -> LexMonad us ()
 updatePos am lm cm = 
@@ -68,8 +68,8 @@ chopStr r = do
 	updatePos (+ len) (+ nls) (const lastNl)
 	modify \s -> s { rest = Text.drop len str0 }
 
-parseStr :: (Char -> Bool) -> LexMonad us Text.Text
-parseStr f = do
+parseWhile :: (Char -> Bool) -> LexMonad us Text.Text
+parseWhile f = do
 	str0 <- gets rest
 	let r = Text.takeWhile f str0
 	let !len = Text.length r
@@ -87,7 +87,7 @@ ensureNotEmpty f = do
 	when (Text.null r) $ parseErrorStr "non-empty check failed"
 	return r
 
-parseStrNE = ensureNotEmpty . parseStr
+parseWhileNE = ensureNotEmpty . parseWhile
 
 ensureString :: Text.Text -> LexMonad us ()
 ensureString s = do

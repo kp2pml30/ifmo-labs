@@ -1,17 +1,14 @@
 {-# LANGUAGE OverloadedStrings #-}
 module Main where
 
-import Common
-import Par
-import YLex.Base
-import YLex.Lex
-import YLex.Combinators
+import qualified Par
+import qualified Lex
+
+import Yada.ParGen.Combinator
 
 import qualified Data.Text as Text
-import qualified Data.Map  as Map
 import Control.Monad
 import Data.Char
-import Control.Applicative
 
 import Test.HUnit
 import Test.Framework
@@ -19,35 +16,9 @@ import Test.Framework.Providers.HUnit
 
 import Data.Bifunctor
 
-skipWs = void $ parseStr isSpace
+skipWs = void $ parseWhile isSpace
 
-parseSymbol c r = do
-	a <- parseChar
-	if a == c
-	then return r
-	else parseError
-
-parseLParen = parseSymbol '(' TLParen
-parseRParen = parseSymbol ')' TRParen
-
-parseWord = do
-	r <- parseStr isAsciiLower
-	when (Text.null r) parseError
-	return r
-
-operators :: Map.Map Text.Text Token
-operators = Map.fromList [("and", TAnd), ("or", TOr), ("xor", TXor), ("not", TNot), ("in", TIn)]
-
-parseOpName = do
-	s <- parseWord
-	maybe (return $ TName s) return (Map.lookup s operators)
-
-parseMain
-	=   parseLParen
-	<|> parseRParen
-	<|> parseOpName
-
-getResult s = bimap lexErrorPos show $ parse $ tokenize s () skipWs parseMain
+getResult s = bimap lexErrorPos show $ Par.parse $ tokenize skipWs Lex.parse () s
 
 myTest s a = do
 	assertEqual (Text.unpack s ++ " parse result") (getResult s) a

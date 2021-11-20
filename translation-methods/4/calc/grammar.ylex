@@ -1,0 +1,18 @@
+-- module Lex (parse) where
+-- import Token
+-- import Data.Char
+
+%state ()
+%token Token
+
+num = parseWhileNE isDigit
+
+%token
+
+'(' ==> const TLParen
+')' ==> const TRParen
+'+' ==> const TAdd
+'-' ==> const TSub
+'*' ==> const TMul
+'/' ==> const TDiv
+num ==> TNum . read . Data.Text.unpack

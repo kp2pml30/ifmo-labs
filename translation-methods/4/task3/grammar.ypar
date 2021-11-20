@@ -9,9 +9,9 @@
 
 type    <== TName "int"
         ==> "int"
-type    <== TName "char"
+        <== TName "char"
         ==> "char"
-type    <== TName "void"
+        <== TName "void"
         ==> "void"
 return  <== TName "return"
 while   <== TName "while"
@@ -30,7 +30,7 @@ comma   <== TComma
 scol    <== TSColon
 addsub  <== TAdd
         ==> bopLift "+"
-addsub  <== TSub
+        <== TSub
         ==> bopLift "-"
 mul     <== TMul
 div     <== TDiv

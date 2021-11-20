@@ -22,45 +22,56 @@ common dflt
         -Wall -Wno-tabs -Wno-missing-signatures -Wno-name-shadowing
     default-extensions:  BangPatterns, RecordWildCards, NamedFieldPuns, BlockArguments, ScopedTypeVariables, DerivingStrategies, GeneralizedNewtypeDeriving, TupleSections
 
-library ygrammargen
+library yadapargen
     import:           dflt
     exposed-modules:
-        YLex.Lex YLex.Base YLex.Combinators YPar.Par
+        Yada.ParGen.Combinator.Lex
+        Yada.ParGen.Combinator.Base
+        Yada.ParGen.Combinator.Combinators
+        Yada.ParGen.Combinator
+        Yada.ParGen.Par
+        Yada.ParGen.Lex
     build-depends: mtl, containers, extra, template-haskell, transformers, array
 
-executable ygrammar
+executable yadagenpar
     import:           dflt
     hs-source-dirs:   exe
     main-is:          Main.hs
-    build-depends:    ygrammargen, extra, containers, mtl, transformers
+    build-depends:    yadapargen, extra, containers, mtl, transformers
+
+executable yadagenlex
+    import:           dflt
+    hs-source-dirs:   exe2
+    main-is:          Main.hs
+    build-depends:    yadapargen, extra, containers, mtl, transformers
 
 Test-Suite testcalc
     import:           dflt
     hs-source-dirs:   calc
     main-is:          Main.hs
-    other-modules:    Par Lex
+    other-modules:    Par Lex Token
     type:             exitcode-stdio-1.0
-    build-depends:    ygrammargen, test-framework, test-framework-hunit, HUnit, extra, containers, mtl, transformers
+    build-depends:    yadapargen, test-framework, test-framework-hunit, HUnit, extra, containers, mtl, transformers
+
+Test-Suite testinh
+    import:           dflt
+    hs-source-dirs:   inh
+    main-is:          Main.hs
+    other-modules:    Par Lex Token
+    type:             exitcode-stdio-1.0
+    build-depends:    yadapargen, test-framework, test-framework-hunit, HUnit, extra, containers, mtl, transformers
 
 Test-Suite test2
     import:           dflt
     hs-source-dirs:   task2
     main-is:          Main.hs
-    other-modules:    Par Common Expr
+    other-modules:    Par Lex Common Expr
     type:             exitcode-stdio-1.0
-    build-depends:    ygrammargen, test-framework, test-framework-hunit, HUnit, extra, containers, mtl, transformers
+    build-depends:    yadapargen, test-framework, test-framework-hunit, HUnit, extra, containers, mtl, transformers
 
 executable task3
     import:           dflt
     hs-source-dirs:   task3
     main-is:          Main.hs
     other-modules:    Obfuscation.Lex Obfuscation.ParGen Obfuscation.Par Obfuscation.Obf Obfuscation.Tokens
-    build-depends:    ygrammargen, extra, containers, mtl, transformers, random
-
-Test-Suite testinh
-    import:           dflt
-    hs-source-dirs:   inh
-    main-is:          Main.hs
-    other-modules:    Par Lex
-    type:             exitcode-stdio-1.0
-    build-depends:    ygrammargen, test-framework, test-framework-hunit, HUnit, extra, containers, mtl, transformers
+    build-depends:    yadapargen, extra, containers, mtl, transformers, random

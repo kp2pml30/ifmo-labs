@@ -1,0 +1,12 @@
+-- module Lex (parse) where
+
+%state ()
+%token Token
+
+import Token
+
+%token
+
+'b' ==> const TB
+'n' ==> const TN
+

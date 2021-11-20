@@ -1,18 +1,29 @@
+{-# LANGUAGE OverloadedStrings #-}
+
 module Main (main) where
 
 import Test.HUnit
 import Test.Framework
 import Test.Framework.Providers.HUnit
 
-import Par
-import Lex
+import Data.Char
+import Control.Monad
+import qualified Data.Text as Text
+
+import Yada.ParGen.Combinator
+
+import qualified Par
+import qualified Lex
+
+skipWs = void $ parseWhile isSpace
 
 myTest s exp =
-	let res = parse $ scan s in
+	let res = Par.parse $ tokenize skipWs Lex.parse () s in
 	assertEqual "bad eval" exp (either (const Nothing) Just res)
 
 main = do
 	let
+		exprs :: [(Text.Text, Maybe Int)]
 		exprs =
 			[ ("0", Just 0)
 			, ("1 + 2", Just 3)
@@ -27,5 +38,5 @@ main = do
 			, ("1 -- 5.", Nothing)
 			, ("1 - - 5.", Nothing)
 			]
-	let tests = map (\(s, n) -> testCase s $ myTest s n) exprs
+	let tests = map (\(s, n) -> testCase (Text.unpack s) $ myTest s n) exprs
 	defaultMainWithOpts tests mempty

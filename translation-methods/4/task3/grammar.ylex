@@ -1,0 +1,42 @@
+-- module Obfuscation.Lex (alexScanTokens) where
+
+%state ()
+%token Token
+
+import qualified Data.Text as Text
+import Control.Applicative
+import Data.Functor
+import Data.Function (on)
+import Data.Char
+
+import Yada.ParGen.Combinator
+import Obfuscation.Tokens
+
+notQuote = parseWhile (/= '"')
+num = parseWhileNE isDigit
+namePref = parseWhileNE isAlpha
+nameSuff = parseWhile isAlphaNum
+
+skipWs = void $ parseWhile isSpace
+
+alexScanTokens :: String -> TokensList Token
+alexScanTokens s = tokenize skipWs parse () $ Text.pack s
+
+%token
+'(' ==> const TLParen
+')' ==> const TRParen
+'{' ==> const TLCParen
+'}' ==> const TRCParen
+'=' ==> const TSet
+'+' ==> const TAdd
+'-' ==> const TSub
+'*' ==> const TMul
+'/' ==> const TDiv
+',' ==> const TComma
+';' ==> const TSColon
+
+num ==> TLiteral . Text.unpack
+
+'"' notQuote '"' ==> \_ t _ -> TLiteral $ '"' : Text.unpack t ++ "\""
+
+namePref nameSuff ==> \a b -> TName $ ((++) `on` Text.unpack) a b

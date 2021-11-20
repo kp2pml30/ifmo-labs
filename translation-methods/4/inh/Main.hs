@@ -5,14 +5,22 @@ import Test.Framework
 import Test.Framework.Providers.HUnit
 
 import Control.Monad.Reader (runReader)
+import Control.Monad
+import Data.Char
+import qualified Data.Text as Text
 
-import Par
-import Lex
+import Yada.ParGen.Combinator
+
+import qualified Par
+import qualified Lex
+import Token
 
 myTest :: String -> Tree -> Assertion
 myTest s exp =
-	let res = flip runReader 0 <$> parse (scan s) in
+	let res = flip runReader 0 <$> Par.parse (tokenize skipWs Lex.parse () $ Text.pack s) in
 	assertEqual "bad eval" (Right exp) res
+
+skipWs = void $ parseWhile isSpace
 
 main = do
 	let

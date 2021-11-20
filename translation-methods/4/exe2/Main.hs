@@ -2,15 +2,14 @@
 
 module Main (main) where
 
-import Yada.ParGen.Par
+import Yada.ParGen.Lex
 
 import qualified Data.Text.IO as TextIO
 import System.IO (hPutStrLn, stderr)
 import System.Exit (exitFailure)
-import Data.String (IsString(..))
 
 main = do
-	s <- getContents
-	case processGrammar <$> parseGrammar (fromString s) of
+	s <- TextIO.getContents
+	case processLexGrammar s of
 		Left p -> hPutStrLn stderr ("Error occured " ++ show p) >> exitFailure
 		Right r -> TextIO.putStrLn r

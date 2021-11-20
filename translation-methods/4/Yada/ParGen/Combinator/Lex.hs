@@ -1,17 +1,17 @@
 {-# LANGUAGE DeriveFunctor #-}
 
-module YLex.Lex where
+module Yada.ParGen.Combinator.Lex where
 
 import qualified Data.Text as Text
 
-import YLex.Base
-import YLex.Combinators
+import Yada.ParGen.Combinator.Base
+import Yada.ParGen.Combinator.Combinators
 import Control.Monad
 import Control.Monad.State
 import Control.Applicative
 
-tokenize :: forall us a. Text.Text -> us -> LexMonad us () -> LexMonad us a -> TokensList a
-tokenize t u pre f =
+tokenize :: forall us a. LexMonad us () -> LexMonad us a -> us -> Text.Text -> TokensList a
+tokenize pre f u t =
 	tokenize' $ defaultLexState u t
 	where
 		tokenize' !s0 =

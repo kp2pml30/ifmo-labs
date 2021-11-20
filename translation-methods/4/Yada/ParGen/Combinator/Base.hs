@@ -1,4 +1,4 @@
-module YLex.Base where
+module Yada.ParGen.Combinator.Base where
 
 import Control.Monad.State
 import Control.Monad.Trans.Except
