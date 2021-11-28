@@ -1,0 +1,14 @@
+# DOES NOT WORK
+
+mov edx,len ;message length
+mov rdi, qword ptr [rbp - 0x18] ; msg
+mov ebx,1   ;file descriptor (stdout)
+mov eax,4   ;system call number (sys_write)
+int 0x80    ;call kernel
+
+mov rdx, 100
+mov rsi, qword ptr [rbp - 0x18]
+mov rdi, 1
+mov rax, 4
+int 0x80
+

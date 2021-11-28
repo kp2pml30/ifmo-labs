@@ -1,0 +1,17 @@
+debug043:01110004 mov     eax, [ebp+0Ch]
+debug043:01110007 cmp     eax, 8
+
+check size is 8
+
+res 10
+len C
+arg 8
+...
+...
+
+debug043:01110011 cmp     eax, 'siti'
+debug043:01110016 jnz     short loc_1110081
+debug043:0111001B cmp     eax, 'ysae'
+debug043:01110020 jnz     short loc_1110081
+
+itiseasy

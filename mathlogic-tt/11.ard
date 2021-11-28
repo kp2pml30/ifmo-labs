@@ -1,0 +1,134 @@
+\import Logic
+\import Logic.Meta
+\import Order.Lattice
+\import Order.PartialOrder
+\import Paths
+\import Paths.Meta
+
+-- task 1.a
+\class OneLattice \extends Lattice {
+  | one : E
+  | one-sat {a : E} : a <= one
+}
+
+\class ImplicativeLattice \extends Lattice {
+  | notEmpty : E
+  | \infixr 2 l-> (a b : E) : E
+  | l->-sat {a b : E} : a ∧ (a l-> b) <= b
+  | l->-max {a b c : E} : a ∧ c <= b -> c <= (a l-> b)
+
+  \func asOneLat : OneLattice E \cowith
+    | Lattice => \this
+    | one => notEmpty l-> notEmpty
+    | one-sat {a : E} => l->-max meet-left
+
+  \func asDistrib : DistributiveLattice E \cowith
+    | Lattice => \this
+    | ldistr>= {a b c : E} =>
+      \let d => a ∧ b ∨ a ∧ c \in
+      -- a*(b+c) <= ab + ac
+      <=-transitive
+        -- a(b + c) <= a(a -> d)
+        (MeetSemilattice.meet-monotone (Poset.<=_= idp)
+          -- b + c <= a -> d
+          (join-univ
+            -- b <= a -> d
+            (l->-max join-left)
+            -- c <= a -> d
+            (l->-max join-right)))
+        -- a(a -> d) <= d
+        (l->-sat {\this} {a} {d})
+}
+
+-- task 1.b not solved
+\class ZeroLattice \extends Lattice {
+  | zero : E
+  | zero-sat {a : E} : zero <= a
+}
+
+\class Heyting \extends ImplicativeLattice, ZeroLattice {
+  \func hnot (a : E) : E => a l-> zero
+
+  \func contradiction {a b : E} : (a l-> b) l-> (a l-> hnot b) l-> hnot a = OneLattice.one {ImplicativeLattice.asOneLat} =>
+    \let oneLat => ImplicativeLattice.asOneLat \in
+    \let one => OneLattice.one {oneLat} \in
+    -- (a -> b) -> (a -> !b) -> !a
+    -- (a -> b) -> (a -> b -> 0) -> a -> 0
+    <=-antisymmetric
+        OneLattice.one-sat
+        {?}
+}
+
+-- task 1.c
+
+\class Boolean \extends Heyting {
+  | excludedMiddle {a : E} : a ∨ Heyting.hnot a = OneLattice.one {ImplicativeLattice.asOneLat}
+
+  \func task1c {a : E} : Heyting.hnot (Heyting.hnot a) l-> a = OneLattice.one {ImplicativeLattice.asOneLat} =>
+    <=-antisymmetric
+        OneLattice.one-sat
+        {?}
+}
+
+
+\import Algebra.Group
+\import Algebra.Pointed
+\import Algebra.Monoid
+
+\func =-transitivity {A : \Type} {a a' a'' : A} (p : a = a') (q : a' = a'') : a = a''
+  => transport (\lam x => a = x) q p
+
+-- task 3a
+\func only-ide {G : Monoid} (ide1 : G.E) (eq : G.ide G.* ide1 = G.ide) : G.ide = ide1 =>
+  -- G.ide = ide1
+  =-transitivity
+    -- G.ide G.* ide1 = G.ide
+    -- G.ide = G.ide G.* ide1
+    (inv eq)
+    -- G.ide G.* ide1 = ide1
+    (G.ide-left {ide1})
+
+-- task 3b
+\class Homo (g1 : Group) (g2 : Group) (homo-f : g1.E -> g2.E) {
+  | homo-proof {a b : g1.E} : homo-f (a g1.* b) = homo-f a g2.* homo-f b
+
+  \func kern (x : g1.E) : \Prop =>
+    homo-f x = g2.ide
+}
+
+\func IdHomo (g : Group) : Homo g g (\lam x => x) \cowith
+  | homo-proof => idp
+
+\lemma id-homo-kern {g : Group} : Homo.kern {IdHomo g} = (\lam x => x = g.ide) => idp
+
+\import Arith.Nat
+\import Data.List
+
+\func repl {A B : \Type} (p : A = B) (x : A) : B => coe (p @) x right
+
+-- task 4a
+\class Permutation (n : Nat) {
+  | perm-nontempty : 1 <= n
+  | perm : List Nat
+  | perm-size : length perm = n
+  | perm-index-of {i : Nat} (ls : i <= pred n) : Fin n
+  | perm-index-ok {i : Nat} (ls : i <= pred n) : perm !! repl (pmap Fin (inv perm-size)) (perm-index-of ls) = i
+}
+
+\func one<sucsucx {x : Nat} : 1 NatSemiring.< suc (suc x)
+  \elim x
+  | Nat.zero => id<suc {1}
+  | suc y => NatSemiring.<-transitive (id<suc {1}) (NatSemiring.suc<suc (one<sucsucx {y}))
+
+\func perm-01-proof-perm-index-of {i : Nat} (ls : i <= pred 2) : Fin 2
+  \elim i
+    | 0 => Fin.fromNat {1} 0
+    | 1 => Fin.fromNat {1} 1
+    | suc (suc a) => absurd (ls (one<sucsucx {a}))
+
+\instance perm-01 : Permutation 2
+  | perm-nontempty : 1 NatBSemilattice.<= 2 => suc<=suc (zero<=_ {1})
+  | perm => 0 :: 1 :: nil
+  | perm-size => idp
+  | perm-index-of => perm-01-proof-perm-index-of
+  | perm-index-ok {i : Nat} (ls : i <= 1) => perm !! {?}

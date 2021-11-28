@@ -1,0 +1,2 @@
+1. call sleep first time for relocation (otherwise verything dies)
+2. on second call to it place C3 (ret) as first byte

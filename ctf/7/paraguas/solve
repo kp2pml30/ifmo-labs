@@ -1,0 +1,24 @@
+{$asm}
+alloc(ipAddr, 30)
+
+ipAddr:
+  db '1'
+  db '0'
+  db '9'
+  db '.'
+  db '2'
+  db '3'
+  db '3'
+  db '.'
+  db '5'
+  db '6'
+  db '.'
+  db '9'
+  db '0'
+  db 0
+
+401756:
+       lea rax, [ipAddr]
+
+
+then break on 4017A9

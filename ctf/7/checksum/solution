@@ -1,0 +1,96 @@
+The Target Result: 115 (0x73 / s)
+Doing workload 2 part # 1... done
+Result: 9 (0x9 /        )
+The Target Result: 112 (0x70 / p)
+Doing workload 2 part # 2... done
+Result: 159 (0x9f / ?)
+The Target Result: 98 (0x62 / b)
+Doing workload 2 part # 3... done
+Result: 124 (0x7c / |)
+The Target Result: 99 (0x63 / c)
+Doing workload 2 part # 4... done
+Result: 68 (0x44 / D)
+The Target Result: 116 (0x74 / t)
+Doing workload 2 part # 5... done
+Result: 151 (0x97 / ?)
+The Target Result: 102 (0x66 / f)
+Doing workload 2 part # 6... done
+Result: 156 (0x9c / ?)
+The Target Result: 123 (0x7b / {)
+Doing workload 2 part # 7... done
+Result: 111 (0x6f / o)
+The Target Result: 49 (0x31 / 1)
+Doing workload 2 part # 8... done
+Result: 62 (0x3e / >)
+The Target Result: 95 (0x5f / _)
+Doing workload 2 part # 9... done
+Result: 150 (0x96 / ?)
+The Target Result: 97 (0x61 / a)
+Doing workload 2 part # 10... done
+Result: 56 (0x38 / 8)
+The Target Result: 109 (0x6d / m)
+Doing workload 2 part # 11... done
+Result: 95 (0x5f / _)
+The Target Result: 95 (0x5f / _)
+Doing workload 2 part # 12... done
+Result: 166 (0xa6 / ?)
+The Target Result: 116 (0x74 / t)
+Doing workload 2 part # 13... done
+Result: 55 (0x37 / 7)
+The Target Result: 104 (0x68 / h)
+Doing workload 2 part # 14... done
+Result: 9 (0x9 /        )
+The Target Result: 101 (0x65 / e)
+Doing workload 2 part # 15... done
+Result: 93 (0x5d / ])
+The Target Result: 95 (0x5f / _)
+Doing workload 2 part # 16... done
+Result: 162 (0xa2 / ?)
+The Target Result: 109 (0x6d / m)
+Doing workload 2 part # 17... done
+Result: 60 (0x3c / <)
+The Target Result: 49 (0x31 / 1)
+Doing workload 2 part # 18... done
+Result: 135 (0x87 / ?)
+The Target Result: 103 (0x67 / g)
+Doing workload 2 part # 19... done
+Result: 75 (0x4b / K)
+The Target Result: 104 (0x68 / h)
+Doing workload 2 part # 20... done
+Result: 67 (0x43 / C)
+The Target Result: 55 (0x37 / 7)
+Doing workload 2 part # 21... done
+Result: 62 (0x3e / >)
+The Target Result: 121 (0x79 / y)
+Doing workload 2 part # 22... done
+Result: 165 (0xa5 / ?)
+The Target Result: 95 (0x5f / _)
+Doing workload 2 part # 23... done
+Result: 130 (0x82 / ?)
+The Target Result: 112 (0x70 / p)
+Doing workload 2 part # 24... done
+Result: 9 (0x9 /        )
+The Target Result: 52 (0x34 / 4)
+Doing workload 2 part # 25... done
+Result: 250 (0xfa / ?)
+The Target Result: 116 (0x74 / t)
+Doing workload 2 part # 26... done
+Result: 190 (0xbe / ?)
+The Target Result: 99 (0x63 / c)
+Doing workload 2 part # 27... done
+Result: 64 (0x40 / @)
+The Target Result: 104 (0x68 / h)
+Doing workload 2 part # 28... done
+Result: 136 (0x88 / ?)
+The Target Result: 51 (0x33 / 3)
+Doing workload 2 part # 29... done
+Result: 180 (0xb4 / ?)
+The Target Result: 114 (0x72 / r)
+Doing workload 2 part # 30... done
+Result: 131 (0x83 / ?)
+The Target Result: 125 (0x7d / })
+
+
+ sed '/^The Target/!d' solution | sed 's/.*\(.\))/\1/g'
+
+spbctf{1_am_the_m1gh7y_p4tch3r}

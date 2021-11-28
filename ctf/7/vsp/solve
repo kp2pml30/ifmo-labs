@@ -1,0 +1,26 @@
+>  strace ./vsp.elf
+
+execve("./vsp.elf", ["./vsp.elf"], 0x7ffdb918da80 /* 22 vars */) = 0
+uname({sysname="Linux", nodename="LAPTOP-KAL0C1RR", ...}) = 0
+brk(NULL)                               = 0x1ad1000
+brk(0x1ad21c0)                          = 0x1ad21c0
+arch_prctl(ARCH_SET_FS, 0x1ad1880)      = 0
+readlink("/proc/self/exe", "/mnt/d/DiskZ/ifmo/labs/ctf/7/vsp"..., 4096) = 40
+brk(0x1af31c0)                          = 0x1af31c0
+brk(0x1af4000)                          = 0x1af4000
+access("/etc/ld.so.nohwcap", F_OK)      = -1 ENOENT (No such file or directory)
+ptrace(PTRACE_TRACEME)                  = -1 EPERM (Operation not permitted)
+open("/tmp/flag.txt", O_WRONLY|O_CREAT|O_TRUNC, 0666) = 3
+fstat(3, {st_mode=S_IFREG|0644, st_size=0, ...}) = 0
+write(3, "flag_is_413d791790502b30842994da"..., 40) = 40
+close(3)                                = 0
+unlink("/tmp/flag.txt")                 = 0
+exit_group(0)                           = ?
++++ exited with 0 +++
+
+
+(gdb) catch syscall unlink
+Catchpoint 1 (syscall 'unlink' [87])
+
+cat /tmp/flag.txt
+flag_is_413d791790502b30842994da1ec6def4

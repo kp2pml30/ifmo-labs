@@ -1,0 +1,15 @@
+it again takes number as 4 chars
+^ 36478241h
+swap
+^ 3A29E87Fh
+swap
+^ 0E5E5E5E5h
+ror 7
+^ 13373389h
+
+optimize a bit:
+^ 36478241h
+^ swap(3A29E87Fh)
+^ 0E5E5E5E5h
+ror 7
+^ 13373389h

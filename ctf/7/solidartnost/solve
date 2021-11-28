@@ -1,0 +1,68 @@
+patch file string near flag that has Sha1<hash>
+
+dart ./solidartnost.jit
+
+Welcome!
+
+1. Verify integrity of the running file
+2. Sign a petition
+3. Get flag
+4. Don't sign a petition
+0. Exit
+> 2
+
+Choose what to show your solidartnost with:
+1) http://ion.ranepa.ru/school/5steps/
+2) http://5steps.academy/
+3) https://5steps.vote/
+4) http://www.cfkadm.ru/вопрос-ответ/5steps/
+? 3
+Go to https://5steps.vote/, check if there is a petition going, and show your solidartnost
+
+1. Verify integrity of the running file
+2. Sign a petition
+3. Get flag
+4. Don't sign a petition
+0. Exit
+> 1
+
+[*] Reading the file...
+[.] Checking file size...
+[+] File size is 4494096, correct
+[.] Checking hash for first 1000000 bytes of file...
+[+] Hash is 8e7aa1e230a9efb83daaa1c81c4c52ebd320a6e9, correct
+[.] Checking entire file hash...
+[.] Hash is df39438456cbf204a49c3c659edceb83164cb271, probably it's correct
+
+1. Verify integrity of the running file
+2. Sign a petition
+3. Get flag
+4. Don't sign a petition
+0. Exit
+> 3
+
+[*] OK, let's verify if you're eligible for a flag
+[?] What was the file size checked against in menu option 1 ? 4494096
+[+] Correct.
+
+[?] What was the choice related to COVID-19 in menu option 2 ? https://5steps.vote/
+[+] Correct.
+
+[?] What is the secret string you need to input in menu option 3 ? kp2pml30
+[.] Calculating hash for what you've typed...
+[.] Comparing hash with correct hash...
+[+] Correct!
+
+[.] Decrypting flag
+[.] Continuing to decrypt flag
+[.] Proceeding to output the decrypted flag
+Flag: spbctf{n0t_th3_eth3reum_sol1dari7y_but_t3h_n3w_sol1D4RTity}
+
+1. Verify integrity of the running file
+2. Sign a petition
+3. Get flag
+4. Don't sign a petition
+0. Exit
+> ^C
+
+ctf/7/s

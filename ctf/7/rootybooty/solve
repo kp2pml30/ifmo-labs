@@ -1,0 +1,6 @@
+xor eax, eax
+ret
+
+"\x31\xc0\xc3"
+
+patch 2 functions as this

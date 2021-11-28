@@ -1,0 +1,15 @@
+[<SimState @ 0x804859c>]
+------
++00003+000000041+056
+
+ctf/8/puzzle on  master [!?] took 2m 21s 583ms
+ ./puzzle
+Input number of students to solve python tasks: 3
+
+Input number of students to solve php tasks: 41
+
+Input number of students to solve c++ tasks: 56
+Welldone! The flag is flag{md5}, where md5 is MD5 of concatenation (python_count, php_count, cpp_count)!
+
+
+34156

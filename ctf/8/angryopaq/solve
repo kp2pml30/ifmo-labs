@@ -1,0 +1,63 @@
+#include <cstdint>
+#include <cstdio>
+
+int main()
+{
+  int v4; // [rsp+18h] [rbp-28h]
+  unsigned int v5; // [rsp+1Ch] [rbp-24h] BYREF
+  std::int64_t v6[2]; // [rsp+20h] [rbp-20h] BYREF
+  char v7; // [rsp+30h] [rbp-10h]
+  int v8; // [rsp+3Ch] [rbp-4h]
+
+  v8 = 0;
+  v6[0] = 0x3057233CB0E24BCDLL;
+  v6[1] = 0xC8DCDF5F8A4C9904LL;
+  v7 = 0;
+  // scanf("%d", &v5);
+  // v5 = 133731337;
+  v5 = 1697788020;
+  v5 ^= 1u;
+  v5 ^= 4u;
+  if ( ~v5 != v5 )
+    v5 ^= 8u;
+    v5 ^= 0x10u;
+  if ( ~v5 != v5 )
+    v5 ^= 0x20u;
+  v5 ^= 0x40u;
+    v5 ^= 0x400u;
+  if ( ~v5 != v5 )
+    v5 ^= 0x2000u;
+  if ( ~v5 == v5 )
+    v5 ^= 0x4000u;
+    v5 ^= 0x8000u;
+    v5 ^= 0x20000u;
+  if ( ~v5 != v5 )
+    v5 ^= 0x80000u;
+  v5 ^= 0x400000u;
+    v5 ^= 0x800000u;
+  if ( ~v5 == v5 )
+    v5 ^= 0x1000000u;
+  if ( ~v5 != v5 )
+    v5 ^= 0x2000000u;
+    v5 ^= 0x20000000u;
+  v5 ^= 0x40000000u;
+  v7 = 0;
+  printf("%d\n", v5);
+  if ( v5 == 133731337 )
+  {
+    v4 = 0;
+    printf("YES\n");
+    while ( v4 < 16 )
+    {
+      v5 *= -2022884659;
+      v5 = (v5 >> 29) | (8 * v5);
+      *((std::uint8_t *)v6 + v4++) ^= v5;
+    }
+    printf("Your flag is: spbctf{%s}\n", (const char *)v6);
+  }
+  else
+  {
+    printf("no\n");
+  }
+  return v8;
+}

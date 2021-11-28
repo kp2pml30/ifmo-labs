@@ -1,0 +1,9 @@
+0x403450 - (unsigned)0x40ED7C
+
+hex(4294919892)
+'0xffff46d4'
+
+E8 CF 46 FF FF
+
+good '0xffff46d4'
+bad '0xffff4644'
