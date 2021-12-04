@@ -1,0 +1,6 @@
+
+break * 0x00005555555552c4
+print $rax
+
+mov rax, 0xb74acbe98e9de4c
+48 B8 4C DE E9 98 BE AC 74 0B

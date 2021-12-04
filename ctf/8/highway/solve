@@ -1,0 +1,1 @@
+cat trace | grep '0x80484ba\|0x80484e0' > trace-filter

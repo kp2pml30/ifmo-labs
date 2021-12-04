@@ -1,0 +1,5 @@
+md5 ne ne slishali
+
+python3 solve.py > tmp
+delete 3 lines from file
+python3 process.py

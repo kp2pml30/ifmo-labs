@@ -1,3 +1,6 @@
+\import Data.Or
+\import Function.Meta
+\import HLevel
 \import Logic
 \import Logic.Meta
 \import Order.Lattice
@@ -70,6 +73,39 @@
         {?}
 }
 
+{- Task 2a -}
+\import Topology.TopSpace
+
+\func funExt {A : \Type} (B : A -> \Type) {f g : \Pi (a : A) -> B a}
+             (p : \Pi (a : A) -> f a = g a) : f = g
+  => path (\lam i => \lam a => p a @ i)
+
+\func Empty-isProp : isProp Empty => \lam x y => absurd x
+
+\lemma task2a {E : TopSpace} : topology {E} (\lam _ => Empty) =>
+  transport topology
+      (funExt {E} (\lam _ => \Prop) (\lam _ => propExt (\lam x => TruncP.rec Empty-isProp x (\lam y => y.2)) absurd))
+      (top-Join (\lam _ => Empty) (\lam p sp => absurd sp))
+
+-- task 2d
+\instance DiscreteTopo : TopSpace Int
+  -- everything is open
+  | topology => \lam _ => \Sigma
+  -- X is open
+  | top-top => ()
+  -- ∩
+  | top-meet {P Q : Int -> \Prop} => \lam _ _ => ()
+  -- ∪
+  | top-Join => \lam _ _ => ()
+
+{-
+-- task 2e
+\instance ArrowTopo : TopSpace Nat
+  | topology => \lam predicate => \Pi (x : Nat) -> predicate x -> predicate (suc x)
+  | top-top => \lam x p => ()
+  | top-meet {P Q : Nat -> \Prop} topoP topoQ => \lam x (p, q) => (topoP x p, topoQ x q)
+  | top-Join (S : (Nat -> \Prop) -> \Prop) => \lam allPInS x px => TruncP.map px (\lam (p, pInS, xInP) => (p, pInS, (allPInS p pInS) x xInP))
+-}
 
 \import Algebra.Group
 \import Algebra.Pointed
@@ -103,16 +139,19 @@
 
 \import Arith.Nat
 \import Data.List
+\import Set
 
 \func repl {A B : \Type} (p : A = B) (x : A) : B => coe (p @) x right
 
--- task 4a
+{-
+---- task 4a with list not done ----
 \class Permutation (n : Nat) {
-  | perm-nontempty : 1 <= n
   | perm : List Nat
   | perm-size : length perm = n
-  | perm-index-of {i : Nat} (ls : i <= pred n) : Fin n
-  | perm-index-ok {i : Nat} (ls : i <= pred n) : perm !! repl (pmap Fin (inv perm-size)) (perm-index-of ls) = i
+  | perm-index-of (i : Fin (length perm)) : Fin $ length perm
+  | perm-index-ok (i : Fin (length perm)) : perm !! perm-index-of i = i
+
+  \func perm-cast-n (i : Fin n) : Fin (length perm) => repl (inv $ pmap Fin perm-size) i
 }
 
 \func one<sucsucx {x : Nat} : 1 NatSemiring.< suc (suc x)
@@ -120,15 +159,114 @@
   | Nat.zero => id<suc {1}
   | suc y => NatSemiring.<-transitive (id<suc {1}) (NatSemiring.suc<suc (one<sucsucx {y}))
 
-\func perm-01-proof-perm-index-of {i : Nat} (ls : i <= pred 2) : Fin 2
-  \elim i
-    | 0 => Fin.fromNat {1} 0
-    | 1 => Fin.fromNat {1} 1
-    | suc (suc a) => absurd (ls (one<sucsucx {a}))
+\func perm-01-h {x : Fin 2} : (0 :: 1 :: nil) !! x = x
+  \elim x
+    | 0 => idp
+    | 1 => idp
 
 \instance perm-01 : Permutation 2
-  | perm-nontempty : 1 NatBSemilattice.<= 2 => suc<=suc (zero<=_ {1})
   | perm => 0 :: 1 :: nil
   | perm-size => idp
-  | perm-index-of => perm-01-proof-perm-index-of
-  | perm-index-ok {i : Nat} (ls : i <= 1) => perm !! {?}
+  | perm-index-of x => x
+  | perm-index-ok (i : Fin 2) => perm-01-h {i}
+
+\func perm-10-h {x : Fin 2} : (1 :: 0 :: nil) !! flip-0-1 x = x
+\elim x
+  | 0 => idp
+  | 1 => idp
+
+\instance perm-10 : Permutation 2
+  -- -- | perm-nontempty : 1 NatBSemilattice.<= 2 => suc<=suc (zero<=_ {1})
+  | perm => 1 :: 0 :: nil
+  | perm-size => idp
+  | perm-index-of => flip-0-1
+  | perm-index-ok (i : Fin 2) => perm-10-h {i}
+
+\func perm-2-no-third (p : Permutation 2) : Or (p = perm-01) (p = perm-10) =>
+  \case p.perm \with {
+    | :: 0 (:: 1 nil) => {?}
+    | :: 1 (:: 0 nil) => {?}
+    | :: t nil => =-transitivity (1 = length (t :: nil)) p.perm-size -- p.perm-index-of (p.perm-cast-n (Fin.fromNat {1} 0))
+    | :: _ (:: _ (:: _ _)) => {?}
+    | :: 0 (:: 0 nil) => absurd $ perm-index-ok (perm-index-of 1)
+    | :: 1 (:: 1 nil) => {?}
+    | nil => {?}
+    | :: _ (:: (suc (suc _)) nil) => {?}
+    | :: (suc (suc _)) (:: _ nil) => {?}
+  }
+-}
+
+-- 4a
+\func isInj {A B : \Set} (f : A -> B) => \Pi (x y : A) -> f x = f y -> x = y
+
+\func isSur {A B : \Set} (f : A -> B) : \Prop =>
+  \Pi (b : B) -> TruncP (\Sigma (a : A) (f a = b))
+
+\func isBij {A B : \Set} (f : A -> B) => ∃ (g : B -> A) (\Pi (x : A) -> g (f x) = x) (\Pi (y : B) -> f (g y) = y)
+
+\class Permutation (n : Nat) {
+  | perm-func : Fin n -> Fin n
+  | perm-func-bij : isBij perm-func
+}
+
+\func permExt {n : Nat} {f g : Permutation n}
+              (pf : f.perm-func = g.perm-func)
+  => path (\lam i => \new Permutation n {
+    | perm-func => pf @ i
+    | perm-func-bij => coe (\lam j => isBij (pf @ j)) f.perm-func-bij i
+  })
+
+\func unit-perm {n : Nat} : Permutation n \cowith {
+  | perm-func => \lam x => x
+  | perm-func-bij => inP (\lam x => x, \lam _ => idp, \lam _ => idp)
+}
+
+\func perm-01 : Permutation 2 => unit-perm
+
+\func flip-0-1 (x : Fin 2) : Fin 2
+\elim x
+  | 0 => 1
+  | 1 => 0
+
+\func flip-0-1-flip {x : Fin 2} : flip-0-1 (flip-0-1 x) = x
+\elim x
+  | 0 => idp
+  | 1 => idp
+
+\func perm-10 : Permutation 2 \cowith {
+  | perm-func => flip-0-1
+  | perm-func-bij => inP (flip-0-1, \lam x => flip-0-1-flip {x}, \lam x => flip-0-1-flip {x})
+}
+
+\func proofNeq (a : Nat) : \Type
+  \elim a
+    | 0 => 0 = 0
+    | suc x => Empty
+
+\func zero!=sucx {x : Nat} (p : 0 = suc x) : Empty =>
+  transport proofNeq {0} {suc x} p idp
+
+\func notInj->notBij {A B : \Set} (f : A -> B) (p : isBij f) {x y : A} (nq : Not (x = y)) (eq : f x = f y) : Empty =>
+  TruncP.rec Empty-isProp p (\lam (g, gf, fg) =>
+      nq (=-transitivity (=-transitivity (inv (gf x)) (pmap g eq)) (gf y)))
+
+\lemma perm-01-neq-10 (p : perm-01 = perm-10) : Empty =>
+  zero!=sucx (pmap (\lam (x : Permutation 2) => x.perm-func 0) p)
+
+\func task-4a (p : Permutation 2) : Or (p = perm-01) (p = perm-10) =>
+  TruncP.rec
+      (Or.levelProp (\lam p01 p10 => perm-01-neq-10 (=-transitivity (inv p01) p10)))
+      p.perm-func-bij
+      (\lam (g, gf, fg) =>
+          \case p.perm-func 0 \as p0,
+                idp : p.perm-func 0 = p0,
+                p.perm-func 1 \as p1,
+                idp : p.perm-func 1 = p1
+          \return Or (p = perm-01) (p = perm-10)
+          \with {
+            | 0, q0, 0, q1 => absurd (notInj->notBij p.perm-func p.perm-func-bij (\lam p => zero!=sucx {0} p) (=-transitivity q0 (inv q1)))
+            | 0, q0, 1, q1 => inl (permExt {2} {p} {perm-01} (funExt (\lam _ => Fin 2) (\lam (x : Fin 2) => \case \elim x \with { | 0 => q0 | 1 => q1 })))
+            | 1, q0, 0, q1 => inr (permExt {2} {p} {perm-10} (funExt (\lam _ => Fin 2) (\lam (x : Fin 2) => \case \elim x \with { | 0 => q0 | 1 => q1 })))
+            | 1, q0, 1, q1 => absurd (notInj->notBij p.perm-func p.perm-func-bij (\lam p => zero!=sucx {0} p) (=-transitivity q0 (inv q1)))
+          }
+      )

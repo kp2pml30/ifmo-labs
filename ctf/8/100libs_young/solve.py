@@ -40,8 +40,8 @@ def printBr(st):
 sm = p.factory.simulation_manager(state)
 
 print("start exploration")
-sm.explore(find=base_addr+0x3006)
-# sm.explore(find=base_addr+0x12B2)
+# sm.explore(find=base_addr+0x3006)
+sm.explore(find=lambda s: 'YES'.encode('utf-8') in s.posix.dumps(1))
 
 print("start concretize")
 print(sm.found)

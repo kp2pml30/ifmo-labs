@@ -1,0 +1,273 @@
+\import Algebra.Monoid
+\import Algebra.Ring
+\import Arith.Int
+\import Arith.Nat
+\import Data.Bool
+\import Function.Meta
+\import Logic
+\import Logic.Meta
+\import Paths
+
+\truncated \data AltZ : \Set
+  | az (\Sigma Nat Nat)
+  | eq (a b : \Sigma Nat Nat) (r : a.1 Nat.+ b.2 = b.1 Nat.+ a.2) (i : I)
+    \elim i {
+      | left => az a
+      | right => az b
+    }
+
+\func az+ (a b : \Sigma Nat Nat) : \Sigma Nat Nat => (a.1 Nat.+ b.1, a.2 Nat.+ b.2)
+\func az* (a b : \Sigma Nat Nat) : \Sigma Nat Nat => (a.1 Nat.* b.1 Nat.+ a.2 Nat.* b.2, a.1 Nat.* b.2 Nat.+ a.2 Nat.* b.1)
+
+\func componentWise {A B : \Type} {p1 q1 : A} {p2 q2 : B} (f1 : p1 = q1) (f2 : p2 = q2) : (p1, p2) = (q1, q2)
+  => path (\lam i => (f1 @ i, f2 @ i))
+
+\func =-transitivity {A : \Type} {a a' a'' : A} (p : a = a') (q : a' = a'') : a = a''
+  => transport (\lam x => a = x) q p
+
+\func =-transitivity-2 {A : \Type} {a a' a'' a''' : A} (p : a = a') (q : a' = a'') (r : a'' = a''') : a = a'''
+  => =-transitivity (=-transitivity p q) r
+
+\func altZ-zro : AltZ => az (0, 0)
+\func altZ-ide : AltZ => az (1, 0)
+
+\func altZ-+ (a b : AltZ) : AltZ =>
+  \case a, b \return AltZ \with {
+    | az a, az b => az $ az+ a b
+    -- a1 + b = a2 + b
+    -- a1p + bp + a2n + bn = a2p + bp + a1n + bn
+    | eq a1 a2 r i, az b =>
+      -- (a1p + bp) + (a2n + bn) = (a2p + bp) + (a1n + bn)
+      eq
+        (az+ a1 b)
+        (az+ a2 b)
+        (=-transitivity-2
+            (inv NatSemiring.+-assoc)
+            -- a1p + bp + a2n + bn = a2p + bp + a1n + bn
+            (pmap (Nat.`+` b.2)
+                -- a1p + bp + a2n = a2p + bp + a1n
+                (=-transitivity-2
+                    a+b+c=a+c+b
+                    -- a1p + a2n + bp = a2p + a1n + bp
+                    (pmap (Nat.`+` b.1)
+                    -- a1p + a2n = a2p + a1n
+                        r)
+                    a+b+c=a+c+b))
+            NatSemiring.+-assoc)
+        i
+    | az b, eq a1 a2 r i =>
+      eq
+          (az+ b a1)
+          (az+ b a2)
+          -- (bp + a1p) + (bn + a2n) = (bp + a2p) + (bn + a1n)
+          (=-transitivity-2
+            (inv NatSemiring.+-assoc)
+            (=-transitivity-2
+              a+b+c=a+c+b
+              -- (bp + a1p) + a2n + bn = (bp + a2p) + a1n + bn
+              (pmap (Nat.`+` b.2)
+                -- (bp + a1p) + a2n = (bp + a2p) + a1n
+                (=-transitivity-2
+                  NatSemiring.+-assoc
+                  -- bp + (a1p + a2n) = bp + (a2p + a1n)
+                  (pmap (b.1 Nat.`+`)
+                    -- a1p + a2n = a2p + a1n
+                    r)
+                  (inv NatSemiring.+-assoc)))
+                a+b+c=a+c+b)
+            NatSemiring.+-assoc)
+          i
+  }
+
+\func pred (a : Nat) : Nat
+\elim a
+  | 0 => 0
+  | suc b => b
+
+\func a=b->c=d->a+c=b+d {a b c d : Nat} (a=b : a = b) (c=d : c = d) : a Nat.+ c = b Nat.+ d
+  \elim c, d
+    | 0, 0 => a=b
+    | 0, suc d => absurd $ suc/=0 (inv c=d)
+    | suc c, 0 => absurd $ suc/=0 c=d
+    | suc c, suc d => pmap suc $ a=b->c=d->a+c=b+d {a} {b} {c} {d} a=b (pmap pred c=d)
+
+\instance RingAltZ : Ring AltZ
+  | zro => altZ-zro
+  | + (a b : AltZ) => altZ-+ a b
+  | zro-left {x : AltZ} : altZ-+ altZ-zro x = x
+    \elim x {
+     | az a => idp
+    }
+  | +-assoc {a' b' c' : AltZ} : altZ-+ (altZ-+ a' b') c' = altZ-+ a' (altZ-+ b' c')
+    \elim a', b', c' {
+      | az a, az b, az c => pmap az $ componentWise NatSemiring.+-assoc NatSemiring.+-assoc
+    }
+  | +-comm {a' b' : AltZ} : altZ-+ a' b' = altZ-+ b' a'
+    \elim a', b' {
+      | az a, az b => pmap az $ componentWise NatSemiring.+-comm NatSemiring.+-comm
+    }
+  | ide => altZ-ide
+  | * (x y : AltZ) : AltZ
+    \elim x, y {
+      | az a, az b => az $ az* a b
+      | eq a1 a2 r i, az b => {?}
+        {-
+        -- r : a1p + a2n = a2p + a1n
+        -- a1p * bp + a1n * bn + (a2p * bn + a2n * bp) = a2p * bp + a2n * bn + (a1p * bn + a1n * bp)
+        eq
+          (az* a1 b)
+          (az* a2 b)
+          -- (a1p + a2n) * bp + (a1p + a2n) * bn = (a2p + a1n) * bp + (a2p + a1n)
+          (a=b->c=d->a+c=b+d
+            (pmap (Nat.`*` b.1) r)
+            (pmap (Nat.`*` b.2) r))
+          i
+         -}
+      | az _x, eq a b r i => {?}
+    }
+  | ide-left => {?}
+  | ide-right => {?}
+  | *-assoc => {?}
+  | ldistr => {?}
+  | rdistr => {?}
+  | negative => {?}
+  | negative-left => {?}
+
+\func a+b+c=a+c+b {M : AbMonoid} {a b c : M.E} : a M.+ b M.+ c = a M.+ c M.+ b =>
+  M.+-assoc *>
+  -- a + (b + c) = a + (c + b)
+  inv (pmap
+      (a M.`+`)
+      (inv M.+-comm *>
+      (idp : b M.+ c = b M.+ c))) *>
+  inv M.+-assoc
+
+\func int2AltZ (a : Int) : AltZ \elim a
+  | pos n => az (n, 0)
+  | neg n => az (0, n)
+
+\func convert-pos {a b : Nat} : pos (a Nat.+ b) = pos a IntRing.+ pos b => idp
+
+\func +of= {M : AbMonoid} {a b c d : M.E} (a=b : a = b) (c=d : c = d) : a M.+ c = b M.+ d =>
+  pmap (\lam (a, b) => a M.+ b) (componentWise a=b c=d)
+
+\func remove-pos-neg {l r : Int} {b : Int} (e : l = r IntRing.+ b IntRing.+ IntRing.negative b) : l = r =>
+  e *>
+  -- l = r + (b + -b)
+  IntRing.+-assoc *>
+  -- l = r + 0
+  pmap (r IntRing.`+`) (IntRing.+-comm *> IntRing.negative-left {b}) *>
+  AbMonoid.zro-right
+
+\func \infixr 9 <*' {A : \Type} {a a' a'' : A} (p : a = a') (q : a'' = a) : a'' = a' =>
+  inv $ inv p *> inv q
+
+\func inverse-twise {a b c d : \Type} (f : b = a -> d = c) (r : a = b) : c = d => inv $ f $ inv r
+
+\func altZ=ToInt= {a b c d : Nat} (r : a Nat.+ d = c Nat.+ b) : pos a IntRing.+ neg b = pos c IntRing.+ neg d =>
+  \let
+    | x : pos a IntRing.+ neg b IntRing.+ pos d = pos c =>
+      a+b+c=a+c+b {IntRing} {a} {neg b} {pos d} *>
+      remove-pos-neg {pos a IntRing.+ pos d IntRing.+ neg b} {pos c} {b}
+        (pmap (IntRing.`+` neg b)
+          (inv convert-pos *>
+          pmap pos r *>
+          convert-pos))
+    | y => remove-pos-neg $ inv $ pmap (IntRing.`+` neg d) x
+  \in inv y
+
+\func altZ2Int (a : AltZ) : Int
+  \elim a
+    | az x => pos x.1 IntRing.+ neg x.2
+    | eq a b r i => altZ=ToInt= r @ i
+
+\func Int2AltZ2Int (x : Int) : altZ2Int (int2AltZ x) = x
+  \elim x
+    | pos n => idp
+    | neg n => idp
+
+\func unposneg : Int -> Nat => iabs
+
+\func AltZ2Int2AltZ (x : AltZ) : int2AltZ (altZ2Int x) = x
+  \elim x
+  -- proof that (p, n) ~ int2altz (p - n)
+  -- (p, n) ~ (p - n, 0) | (0, n - p)
+  | az (p, n) =>
+    \case pos p IntRing.+ neg n \as p-n, idp : p-n = pos p IntRing.+ neg n \with {
+      | pos x, p-n= =>
+        \let | -n+n=0 : neg n + pos n = 0 => IntRing.negative-left {pos n}
+             | test : pos (x Nat.+ n) = pos p =>
+                -- pos x + pos n = pos p + neg n + pos n
+                pmap (IntRing.`+` pos n) p-n= *>
+                -- pos x + pos n = pos p + (neg n + pos n)
+                IntRing.+-assoc {pos p} {neg n} {pos n} *>
+                -- pos x + pos n = pos p [+ 0]
+                pmap (p IntRing.`+`) -n+n=0
+             | test2 : int2AltZ (pos p IntRing.+ neg n) = az (x, 0) => pmap int2AltZ (inv p-n=) \in
+        test2 *> path (eq (x, 0) (p, n) (pmap unposneg test))
+      | neg (suc x'), p-n= =>
+        \let
+             | x => suc x'
+             | p-p=0 : pos p + neg p = 0 => IntRing.negative-left {pos p}
+             | test : neg x IntRing.+ neg p = neg n =>
+               -- neg x + neg p = neg n + pos p + neg p
+               pmap (IntRing.`+` neg p) (p-n= *> IntRing.+-comm {pos p} {neg n}) *>
+               -- neg x + neg p = neg n + (pos p + neg p)
+               IntRing.+-assoc {neg n} {pos p} {neg p} *>
+               -- neg x + neg p = neg n [+ 0]
+               pmap (neg n IntRing.`+`) p-p=0 -- *>
+               -- IntRing.zro-right
+             | test2 : int2AltZ (pos p IntRing.+ neg n) = az (0, x) => pmap int2AltZ (inv p-n=) \in
+          test2 *> path (eq (0, x) (p, n) (inv (pmap unposneg test) *> NatSemiring.+-comm {x} {p}))
+    }
+
+\func isBij {A B : \Set} (f : A -> B) => \Sigma (g : B -> A) (\Pi (x : A) -> g (f x) = x) (\Pi (y : B) -> f (g y) = y)
+
+\func IntAltZBij : isBij {Int} {AltZ} int2AltZ =>
+  (altZ2Int, Int2AltZ2Int, AltZ2Int2AltZ)
+
+\func isInv {A B : \Type} (f : A -> B) (g : B -> A) => \Sigma (\Pi (x : A) -> g (f x) = x) (\Pi (x : B) -> f (g x) = x)
+
+\truncated \data Cardinality : \Set
+  | cardSet \Set
+  | cardEq (a a' : \Set) (r : ∃ (f : a -> a') (g : a' -> a) (isInv f g)) (i : I)
+  \elim i {
+    | left => cardSet a
+    | right => cardSet a'
+  }
+
+\func bool->fin2 (x : Bool) : Fin 2
+  \elim x
+    | false => 0
+    | true => 1
+
+\func fin2->bool (x : Fin 2) : Bool
+  \elim x
+    | 0 => false
+    | 1 => true
+
+\func bool<->fin2-bfb (x : Bool) : fin2->bool (bool->fin2 x) = x
+  \elim x
+    | false => idp
+    | true => idp
+
+\func bool<->fin2-fbf (x : Fin 2) : bool->fin2 (fin2->bool x) = x
+  \elim x
+    | 0 => idp
+    | 1 => idp
+
+\func task5 : cardSet Bool = cardSet (Fin 2) =>
+  path $ cardEq Bool (Fin 2) $ inP (bool->fin2, fin2->bool, (bool<->fin2-bfb, bool<->fin2-fbf))
+
+\func ChurchT (x : \Type) => (x -> x) -> x -> x
+\func Church => \Pi (x : \Type) -> ChurchT x
+\func Zero : Church => \lam t f x => x
+\func inc (n : Church) : Church => \lam t f x => n t f (f x)
+\func add (a : Church) (b : Church) : Church => \lam t f x => a t f (b t f x)
+
+-- Fin default impl uses Nat.mod, lets avoid it
+
+\func div3 (n : Church) : Church =>
+  \lam t f x => (n (\Sigma t t t) (\lam (x, y, z) => (y, z, f x)) (x, x, x)).1
+
+\func pow (m n : Church) : Church => \lam t => n (t -> t) (m t)

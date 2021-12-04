@@ -11,6 +11,7 @@
 !*.cpp
 !*.rb
 !*.py
+!*.java
 !*.txt
 !*solution*
 !*solve*
