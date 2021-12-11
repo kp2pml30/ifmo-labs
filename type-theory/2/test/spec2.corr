@@ -1,0 +1,2 @@
+x : forall b. b |- x : forall a. a [rule #5]
+*   x : forall b. b |- x : forall b. b [rule #1]

@@ -1,0 +1,28 @@
+cabal-version:      2.2
+name:               tt-lab2
+version:            0.0.0.1
+
+synopsis:           HM proof checker
+
+license:            GPL-3.0-or-later
+author:             kp2pml30
+maintainer:         kp2pml30@gmail.com
+copyright:          Copyright (C) kp2pml30
+
+build-type:         Simple
+
+common dflt
+    default-language: Haskell2010
+    build-depends:
+        base
+    ghc-options:
+        -Wall -Wno-tabs -Wno-missing-signatures -Wno-name-shadowing
+    default-extensions:  BangPatterns, RecordWildCards, NamedFieldPuns, BlockArguments
+
+executable parser
+    import:           dflt
+    hs-source-dirs:   .
+    main-is:          Main.hs
+    other-modules:    Lex Par Types
+    build-depends:    array, transformers, mtl, extra, containers
+

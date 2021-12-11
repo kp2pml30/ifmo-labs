@@ -1,0 +1,2 @@
+x : a |- x : (forall b. a) [rule #6]
+*   y : a |- y : a [rule #1]
