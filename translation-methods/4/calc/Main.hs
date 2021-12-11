@@ -35,8 +35,12 @@ main = do
 			, ("", Nothing)
 			, ("1.", Nothing)
 			, ("+5.", Nothing)
-			, ("1 -- 5.", Nothing)
+			, ("1 -- 5", Just 6)
+			, ("1 ---5", Just $ negate 4)
 			, ("1 - - 5.", Nothing)
+			, ("2 ** 2 ** 3", Just 256)
+			, ("2 ** 3 ** 2", Just 512)
+			, ("2 ** 3 * 3 ** 2", Just 72)
 			]
 	let tests = map (\(s, n) -> testCase (Text.unpack s) $ myTest s n) exprs
 	defaultMainWithOpts tests mempty

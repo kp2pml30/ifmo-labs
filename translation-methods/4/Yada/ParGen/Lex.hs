@@ -61,6 +61,7 @@ proc = do
 
 	return do
 		tellnl "{-# OPTIONS_GHC -w #-}"
+		tellnl "{-# LANGUAGE OverloadedStrings #-}"
 		userIncludes
 		tell "import Yada.ParGen.Combinator\n\
 			\import qualified Data.Text\n\

@@ -13,6 +13,7 @@ num = parseWhileNE isDigit
 ')' ==> const TRParen
 '+' ==> const TAdd
 '-' ==> const TSub
+"**" ==> const TPow
 '*' ==> const TMul
 '/' ==> const TDiv
 num ==> TNum . read . Data.Text.unpack

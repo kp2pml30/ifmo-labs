@@ -6,16 +6,18 @@
 
 num <== TNum y
 	==> y
-addsub
-	<== TSub
-	==> (-)
+add
 	<== TAdd
-	==> (+)
+sub
+	<== TSub
 muldiv
 	<== TMul
 	==> (*)
 	<== TDiv
 	==> div
+pow
+	<== TPow
+	==> (^)
 lpar <== TLParen
 rpar <== TRParen
 
@@ -25,10 +27,16 @@ FILE
 EXPR
 	| ADDSUB ==> id
 
-%oper l ADDSUB addsub MULDIV
-%oper l MULDIV muldiv ATOM
+%oper l ADDSUB ADDSUBOP MULDIV
+%oper l MULDIV muldiv POW
+%oper r POW pow ATOM
+
+ADDSUBOP
+	| add ==> const (+)
+	| sub ==> const (-)
 
 ATOM
 	| num ==> id
+	| sub ATOM ==> \_ a -> negate a
 	| lpar EXPR rpar ==> const const
 
