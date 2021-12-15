@@ -7,20 +7,19 @@
 \import Logic
 \import Logic.Meta
 \import Paths
+\import Set
 
-\truncated \data AltZ : \Set
-  | az (\Sigma Nat Nat)
-  | eq (a b : \Sigma Nat Nat) (r : a.1 Nat.+ b.2 = b.1 Nat.+ a.2) (i : I)
-    \elim i {
-      | left => az a
-      | right => az b
-    }
 
-\func az+ (a b : \Sigma Nat Nat) : \Sigma Nat Nat => (a.1 Nat.+ b.1, a.2 Nat.+ b.2)
-\func az* (a b : \Sigma Nat Nat) : \Sigma Nat Nat => (a.1 Nat.* b.1 Nat.+ a.2 Nat.* b.2, a.1 Nat.* b.2 Nat.+ a.2 Nat.* b.1)
-
+{-
 \func componentWise {A B : \Type} {p1 q1 : A} {p2 q2 : B} (f1 : p1 = q1) (f2 : p2 = q2) : (p1, p2) = (q1, q2)
   => path (\lam i => (f1 @ i, f2 @ i))
+\func +of= {M : AbMonoid} {a b c d : M.E} (a=b : a = b) (c=d : c = d) : a M.+ c = b M.+ d =>
+  pmap (\lam (a, b) => a M.+ b) (componentWise a=b c=d)
+ -}
+
+{-
+\func az+ (a b : \Sigma Nat Nat) : \Sigma Nat Nat => (a.1 Nat.+ b.1, a.2 Nat.+ b.2)
+\func az* (a b : \Sigma Nat Nat) : \Sigma Nat Nat => (a.1 Nat.* b.1 Nat.+ a.2 Nat.* b.2, a.1 Nat.* b.2 Nat.+ a.2 Nat.* b.1)
 
 \func =-transitivity {A : \Type} {a a' a'' : A} (p : a = a') (q : a' = a'') : a = a''
   => transport (\lam x => a = x) q p
@@ -111,18 +110,6 @@
     \elim x, y {
       | az a, az b => az $ az* a b
       | eq a1 a2 r i, az b => {?}
-        {-
-        -- r : a1p + a2n = a2p + a1n
-        -- a1p * bp + a1n * bn + (a2p * bn + a2n * bp) = a2p * bp + a2n * bn + (a1p * bn + a1n * bp)
-        eq
-          (az* a1 b)
-          (az* a2 b)
-          -- (a1p + a2n) * bp + (a1p + a2n) * bn = (a2p + a1n) * bp + (a2p + a1n)
-          (a=b->c=d->a+c=b+d
-            (pmap (Nat.`*` b.1) r)
-            (pmap (Nat.`*` b.2) r))
-          i
-         -}
       | az _x, eq a b r i => {?}
     }
   | ide-left => {?}
@@ -132,6 +119,15 @@
   | rdistr => {?}
   | negative => {?}
   | negative-left => {?}
+-}
+
+\truncated \data AltZ : \Set
+  | az (\Sigma Nat Nat)
+  | eq (a b : \Sigma Nat Nat) (r : a.1 Nat.+ b.2 = b.1 Nat.+ a.2) (i : I)
+  \elim i {
+    | left => az a
+    | right => az b
+  }
 
 \func a+b+c=a+c+b {M : AbMonoid} {a b c : M.E} : a M.+ b M.+ c = a M.+ c M.+ b =>
   M.+-assoc *>
@@ -148,9 +144,6 @@
 
 \func convert-pos {a b : Nat} : pos (a Nat.+ b) = pos a IntRing.+ pos b => idp
 
-\func +of= {M : AbMonoid} {a b c d : M.E} (a=b : a = b) (c=d : c = d) : a M.+ c = b M.+ d =>
-  pmap (\lam (a, b) => a M.+ b) (componentWise a=b c=d)
-
 \func remove-pos-neg {l r : Int} {b : Int} (e : l = r IntRing.+ b IntRing.+ IntRing.negative b) : l = r =>
   e *>
   -- l = r + (b + -b)
@@ -158,11 +151,6 @@
   -- l = r + 0
   pmap (r IntRing.`+`) (IntRing.+-comm *> IntRing.negative-left {b}) *>
   AbMonoid.zro-right
-
-\func \infixr 9 <*' {A : \Type} {a a' a'' : A} (p : a = a') (q : a'' = a) : a'' = a' =>
-  inv $ inv p *> inv q
-
-\func inverse-twise {a b c d : \Type} (f : b = a -> d = c) (r : a = b) : c = d => inv $ f $ inv r
 
 \func altZ=ToInt= {a b c d : Nat} (r : a Nat.+ d = c Nat.+ b) : pos a IntRing.+ neg b = pos c IntRing.+ neg d =>
   \let
@@ -215,7 +203,7 @@
                -- neg x + neg p = neg n + (pos p + neg p)
                IntRing.+-assoc {neg n} {pos p} {neg p} *>
                -- neg x + neg p = neg n [+ 0]
-               pmap (neg n IntRing.`+`) p-p=0 -- *>
+               pmap (neg n IntRing.`+`) p-p=0
                -- IntRing.zro-right
              | test2 : int2AltZ (pos p IntRing.+ neg n) = az (0, x) => pmap int2AltZ (inv p-n=) \in
           test2 *> path (eq (0, x) (p, n) (inv (pmap unposneg test) *> NatSemiring.+-comm {x} {p}))
@@ -225,6 +213,78 @@
 
 \func IntAltZBij : isBij {Int} {AltZ} int2AltZ =>
   (altZ2Int, Int2AltZ2Int, AltZ2Int2AltZ)
+
+\func mapDecide {A B : \Set} {x y : A} (d : Dec (x = y)) (f : A -> B) (g : B -> A) (gf : \Pi (x : A) -> g (f x) = x) : Dec (f x = f y)
+\elim d {
+  | yes e => yes (pmap f e)
+  -- Not (x = y) -> Not (f x = f y)
+  | no n => no (\lam (p : f x = f y) =>
+    n -- x = y -> Empty
+      -- x = g (f x)
+      (inv (gf x) *>
+        -- x = g (f y)
+        pmap g p *>
+        -- x = y
+        gf y))
+}
+
+\func NatDec (x y : Nat) : Decide (x = y) \cowith
+  | decide => impl x y
+  \where {
+    \func impl (x y : Nat) : Dec (x = y) \elim x, y
+      | suc x, suc y => mapDecide (impl x y) suc pred (\lam _ => idp)
+      | suc x, zero => no (\lam (p : suc x = zero) => suc/=0 p)
+      | zero, suc y => no (\lam (p : zero = suc y) => suc/=0 (inv p))
+      | zero, zero => yes idp
+  }
+
+\func IntDec (x y : Int) : Decide (x = y) \cowith
+  | decide => impl x y
+  \where {
+    \func proof_pos/=negsuc (x : Int) : \Prop
+    \elim x
+      | pos x => \Sigma
+      | neg (suc x) => Empty
+
+    \func pos/=negsuc {x y : Nat} (p : pos x = neg (suc y)) : Empty => transport proof_pos/=negsuc p ()
+
+    \func impl (x y : Int) : Dec (x = y)
+    \elim x, y
+      | pos xn, pos yn => mapDecide (NatDec.impl xn yn) pos unposneg (\lam _ => idp)
+      | pos xn, neg (suc yn) => no (\lam (p : pos xn = neg (suc yn)) => absurd (pos/=negsuc p))
+      | neg (suc xn), pos yn => no (\lam (p : neg (suc xn) = pos yn) => absurd (pos/=negsuc (inv p)))
+      | neg (suc xn'), neg (suc yn') => mapDecide (NatDec.impl (suc xn') (suc yn')) neg unposneg (\lam _ => idp)
+  }
+
+\func AltZEqDec (x y : AltZ) : Decide (x = y) \cowith
+  | decide => impl x y
+  \where {
+    \func impl (x y : AltZ) : Dec (x = y) =>
+      \case altZ2Int x \as xi, idp : xi = altZ2Int x,
+            altZ2Int y \as yi, idp : yi = altZ2Int y \with {
+        | xi, xi=az2ix, yi, yi=az2iy =>
+          \case IntDec.impl xi yi \with {
+            | yes n => yes $
+                -- x = int2AltZ (altZ2Int x)
+                inv (AltZ2Int2AltZ x) *>
+                -- x = int2AltZ xi
+                inv (pmap int2AltZ xi=az2ix) *>
+                -- x = int2AltZ yi
+                pmap int2AltZ n *>
+                -- x = int2AltZ (altZ2Int y)
+                pmap int2AltZ yi=az2iy *>
+                -- x = y
+                AltZ2Int2AltZ y
+            | no n => no (\lam (pr : x = y) => n $
+                -- xi = altZ2Int x
+                xi=az2ix *>
+                -- xi = altZ2Int y
+                pmap altZ2Int pr *>
+                -- xi = yi
+                inv yi=az2iy)
+          }
+      }
+  }
 
 \func isInv {A B : \Type} (f : A -> B) (g : B -> A) => \Sigma (\Pi (x : A) -> g (f x) = x) (\Pi (x : B) -> f (g x) = x)
 

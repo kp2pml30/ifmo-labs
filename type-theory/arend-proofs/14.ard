@@ -1,0 +1,215 @@
+\import Algebra.Domain.Euclidean
+\import Data.Or
+\import Function
+\import Logic.Classical
+\import Order.LinearOrder
+\import Order.PartialOrder
+\import Relation.Equivalence
+\import Algebra.Monoid
+\import Algebra.Ring
+\import Arith.Int
+\import Arith.Nat
+\import Data.Bool
+\import Function.Meta
+\import Logic
+\import Logic.Meta
+\import Paths
+\import Set \hiding (#)
+
+\import tt13
+
+\class Setoid (A : \Type)
+  | \infix 4 == : A -> A -> \Prop
+  | ==-reflexive {x : A} : x == x
+  | ==-symmetric {x y : A} : x == y -> y == x
+  | ==-transitive {x y z : A} : x == y -> y == z -> x == z
+
+\func toQuotient {B : \Type} (s : Setoid B) (x : B) : Quotient {B} (s.==) => in~ x
+
+{-
+\truncated \data Quotient {A : \Type} (R : A -> A -> \Type) : \Set
+  | in~ A
+  | ~-equiv (x y : A) (R x y) (i : I) \elim i {
+    | left => in~ x
+    | right => in~ y
+  }
+ -}
+
+\instance ModSetoid (k : Nat) : Setoid Int
+  | == (a : Int) (b : Int) =>
+    \let
+    | am => a IntEuclidean.mod suc k
+    | bm => b IntEuclidean.mod suc k
+    \in am = bm
+  | ==-reflexive => idp
+  | ==-symmetric => inv
+  | ==-transitive => *>
+
+\func task3Extend<=
+  {b : Nat}
+  {res : Bool}
+  {f : Nat -> Bool}
+  (proofLess : \Pi (a : Nat) -> a <= b -> f a = res)
+  (proofCur : f (suc b) = res)
+  -- : \Pi (a : Nat) -> a <= suc b -> f a = res =>
+  (a : Nat)
+  (a<=sb : a <= suc b)
+  : f a = res =>
+    \case LinearOrder.<=-dec a<=sb \with {
+      | inl a<sb => \let | a<=b => <_suc_<= a<sb \in proofLess a a<=b
+      | inr a=sb => pmap f a=sb *> proofCur
+    }
+
+\func task3Help
+  (f : Nat -> Bool)
+  (cur : Nat)
+  : Or
+    (\Sigma (z : Nat) (proofSat : f z = true) (proofMin : \Pi (b : Nat) -> f b = true -> (z NatSemiring.<= b)))
+    (\Pi (b : Nat) -> b NatSemiring.<= cur -> f b = false)
+  \elim cur
+    | 0 =>
+      \case f 0 \as f0, idp : f 0 = f0 \with {
+      | false, f0=false => inr (\lam (b : Nat) (b<=0 : b NatSemiring.<= 0) =>
+          -- f b = f 0
+          pmap f (<=-antisymmetric b<=0 (zero<=_ {b})) *>
+          -- f b = false
+          f0=false)
+      | true, f0=true => inl (0, f0=true, \lam (b : Nat) (eq : f b = true) => zero<=_ {b})
+      }
+    | suc c =>
+      \case task3Help f c \with {
+      | inl a => inl a
+      | inr bad_<=c =>
+        \case f (suc c) \as fsc, idp : f (suc c) = fsc \with {
+        | false, fsc=false => inr (task3Extend<= bad_<=c fsc=false)
+        | true, fsc=true => inl (suc c, fsc=true,
+            \lam (b : Nat) (fb=true : f b = true) =>
+              \case LinearOrder.dec<_<= b (suc c) \with {
+              | inl b<sc => \let | fb=false => bad_<=c b (<_suc_<= b<sc) \in absurd $ true/=false $ inv fb=true *> fb=false
+              | inr sc<=b => sc<=b
+              })
+        }
+      }
+
+\func task3Decidable
+  (f : Nat -> Bool)
+  (x : Nat)
+  (nonEmpty : f x = true)
+  : \Sigma (z : Nat) (proofSat : f z = true) (proofMin : \Pi (b : Nat) -> f b = true -> (z NatSemiring.<= b)) =>
+    \case task3Help f x \with {
+    | inl res => res
+    | inr bad<=x => absurd $ true/=false $ inv nonEmpty *> bad<=x x <=-reflexive
+    }
+
+\func task3DecidableExists
+  (f : Nat -> Bool)
+  (nonEmpty : ∃ (x : Nat) (f x = true))
+  : ∃ (z : Nat) (proofSat : f z = true) (proofMin : \Pi (b : Nat) -> f b = true -> (z NatSemiring.<= b))
+  => TruncP.map nonEmpty (\lam (x : Nat, fx=true) => task3Decidable f x fx=true)
+
+\func task3Problems =>
+  \Pi
+    (R : Nat -> \Prop)
+    (x : Nat)
+    (xSat : R x) ->
+  \Sigma
+    (min : Nat)
+    (minSat : R min)
+    (isMin : \Pi (any : Nat) -> R any -> (min NatSemiring.<= any))
+
+\func task3ExcludedMiddle
+  {phi : \Prop}
+  (problems : task3Problems)
+  : Dec phi
+  =>
+    \let
+    | R (x : Nat) => (x = 1) || phi
+    | (min, minSat, isMin) => problems R 1 (byLeft idp)
+    \in \case min \as m, idp : m = min \with {
+    | 0, -0=min => yes $
+          ||.rec
+              (Path.inProp {phi})
+              (\lam (x=1 : min = 1) => suc/=0 $ inv (-0=min *> x=1))
+              id
+              minSat
+    | suc s, ss=min => no (\lam (phi' : phi) =>
+      \let
+        | aaa =>
+          <=-antisymmetric
+            (zero<=_ {suc s})
+            (transport (\lam (x : Nat) => x NatSemiring.<= 0) (inv ss=min) (isMin 0 $ byRight phi'))
+        \in suc/=0 $ inv aaa)
+    }
+
+\func task3ProblemsExist =>
+  \Pi
+    (R : Nat -> \Prop) ->
+      ∃ (x : Nat) (xSat : R x) ->
+      ∃ (min : Nat)
+          (minSat : R min)
+          (isMin : \Pi (any : Nat) -> R any -> (min NatSemiring.<= any))
+
+\func task3ExcludedMiddleExist
+  {phi : \Prop}
+  (problems : task3ProblemsExist)
+  : Dec phi
+  =>
+    \let
+    | R (x : Nat) => (x = 1) || phi
+    \in
+    \case problems R (inP (1, byLeft idp)) \with {
+      | inP (min, minSat, isMin) =>
+        \case min \as m, idp : m = min \with {
+        | 0, -0=min => yes $
+          ||.rec
+              (Path.inProp {phi})
+              (\lam (x=1 : min = 1) => suc/=0 $ inv (-0=min *> x=1))
+              id
+              minSat
+        | suc s, ss=min => no (\lam (phi' : phi) =>
+          \let
+          | aaa =>
+            <=-antisymmetric
+              (zero<=_ {suc s})
+              (transport (\lam (x : Nat) => x NatSemiring.<= 0) (inv ss=min) (isMin 0 $ byRight phi'))
+          \in suc/=0 $ inv aaa)
+        }
+    }
+
+{-
+
+\func task3'
+  (myEquiv : Equivalence Nat)
+  (x : Nat)
+  : \Sigma (min : Nat)
+    (proofSat : min myEquiv.~ x)
+    (proofMin :
+      \Pi (any : Nat) ->
+      any myEquiv.~ x ->
+      min NatSemiring.<= any)
+  =>
+    {?}
+
+\func task3''
+  (R : Nat -> \Prop)
+  (x : Nat)
+  : ∃ (min : Nat)
+           (proofSat : R x)
+           (proofMin :
+           \Pi (any : Nat) ->
+               R any ->
+               min NatSemiring.<= any)
+  =>
+    {?}
+
+\func task3'''
+  (R : Nat -> \Prop)
+  (any : Nat)
+  (proofSat : R any)
+  : ∃ (another : Nat)
+    (proofSat : R another)
+    (proofLess : another NatSemiring.< any)
+  =>
+    {?}
+
+ -}
