@@ -1,1 +1,0 @@
-pip install -i https://test.pypi.org/simple/ garbage-dependencies==0.1.0
