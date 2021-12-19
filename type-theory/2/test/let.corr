@@ -1,0 +1,4 @@
+def : a, body : b |- let x = def in body : b [rule #4]
+*   def : a, body : b |- def : a [rule #1]
+*   def : a, body : b, x : a |- body : b [rule #1]
+

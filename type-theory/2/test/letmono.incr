@@ -1,0 +1,4 @@
+def : a, body : forall b. b |- let x = def in body : forall b. b [rule #4]
+*   def : a, body : forall b. b |- def : a [rule #1]
+*   def : a, body : forall b. b, x : a |- body : forall b. b [rule #1]
+

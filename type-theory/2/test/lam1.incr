@@ -1,0 +1,2 @@
+body : b |- (\arg1. body) : a -> b [rule #3]
+*   body : b, arg : a |- body : b [rule #1]

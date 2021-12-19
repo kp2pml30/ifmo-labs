@@ -1,0 +1,3 @@
+|- (\i. i) : forall b. b -> b [rule #5]
+*   |- (\i. i) : a -> a [rule #3]
+*   *   i : a |- i : a [rule #1]
