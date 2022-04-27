@@ -42,6 +42,22 @@ void MainWindow::wheelEvent(QWheelEvent* ev)
 	this->update();
 	ev->accept();
 }
+
+void MainWindow::keyPressEvent(QKeyEvent *ev)
+{
+	QMainWindow::keyPressEvent(ev);
+
+	if (auto k = ev->key(); k >= Qt::Key_1 && k <= Qt::Key_9)
+	{
+		mandelbrot.SetPower(k - Qt::Key_1 + 2);
+		ev->accept();
+	}
+	else
+	{
+		ev->ignore();
+	}
+}
+
 void MainWindow::mouseReleaseEvent(QMouseEvent* ev)
 {
 	if (ev->button() == Qt::LeftButton)

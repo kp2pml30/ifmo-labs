@@ -68,13 +68,13 @@ void MandelbrotHolder::TileHelper::InvalidateTiles() noexcept
 	}
 	cache.clear();
 }
-MandelbrotHolder::Tile* MandelbrotHolder::TileHelper::GetTile(int x, int y, Complex corner, Complex diag) noexcept
+MandelbrotHolder::Tile* MandelbrotHolder::TileHelper::GetTile(int x, int y, Complex corner, Complex diag, int power) noexcept
 {
 	auto iter = cache.lower_bound({x, y});
 	if (iter == cache.end() || iter->first != PixCoord(x, y))
 	{
 		Tile* ins = GetFromPool();
-		ins->Set(corner, diag);
+		ins->Set(corner, diag, power);
 		iter = cache.emplace_hint(iter, PixCoord(x, y), ins);
 	}
 	return iter->second;
@@ -136,7 +136,7 @@ void MandelbrotHolder::RenderSmth(QPainter& painter, int width, int height)
 	auto& ts = tilesData.thumbnail.scale;
 	if (tx != coordSys.xcoord || ty != coordSys.ycoord || ts != coordSys.scale)
 	{
-		tile->Set(offset, diag);
+		tile->Set(offset, diag, power);
 		tile->Update();
 		tx = coordSys.xcoord;
 		ty = coordSys.ycoord;
@@ -222,7 +222,7 @@ void MandelbrotHolder::Render(int width, int height)
 
 			Complex corner = Complex(rx, ry) * coordSys.scale;
 			corner += coordSys.zeroPixelCoord;
-			auto* tile = tilesData.GetTile(rx, ry, corner, Complex(Tile::size, Tile::size) * coordSys.scale);
+			auto* tile = tilesData.GetTile(rx, ry, corner, Complex(Tile::size, Tile::size) * coordSys.scale, power);
 			if (needsInvalidation)
 				usedTiles.used.emplace(tile);
 			auto img = tile->rendered.load();
@@ -268,6 +268,14 @@ void MandelbrotHolder::Render(int width, int height)
 		// threading.cv.notify_all();
 		scheduler();
 	}
+}
+
+void MandelbrotHolder::SetPower(int power)
+{
+	if (this->power == power)
+		return;
+	this->power = power;
+	tilesData.InvalidateTiles();
 }
 
 MandelbrotHolder::~MandelbrotHolder()

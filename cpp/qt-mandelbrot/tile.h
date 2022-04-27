@@ -23,6 +23,7 @@ private:
 	std::array<QImage, 4> mips;
 	int currentMip = 0;
 	int currentY = 0;
+	int power = 2;
 	Complex corner, diag;
 	std::mutex mut;
 
@@ -31,7 +32,7 @@ private:
 
 	friend MandelbrotHolder;
 
-	static std::uint8_t mand(Complex c) noexcept
+	static std::uint8_t mand(Complex c, int power) noexcept
 	{
 		if (c.real() >= -0.5 && c.real() <= 0.25
 				&& c.imag() >= -0.5 && c.imag() <= 0.5)
@@ -43,7 +44,7 @@ private:
 			if (std::norm(z) >= std::norm(Complex(2, 0))) // fast math removes sqrt, but anyway
 				return i % 64;
 			else
-				z = z * z + c;
+				z = std::pow(z, power) + c;
 		return 0;
 	}
 public:
@@ -88,12 +89,13 @@ public:
 	}
 
 	// to call from main thread
-	void Set(Complex corner, Complex diag) noexcept
+	void Set(Complex corner, Complex diag, int power) noexcept
 	{
 		Interrupt();
 		auto locker = std::lock_guard(mut);
 		this->corner = corner;
 		this->diag = diag;
+		this->power = power;
 		currentMip = 0;
 		currentY = 0;
 
@@ -147,7 +149,7 @@ public:
 			for (int x = 0; x < w; x++)
 			{
 				auto xx = (PrecType)x / w * mdiag.real() + mcorner.real();
-				auto val = mand({xx, yy});
+				auto val = mand({xx, yy}, power);
 				data[x * 3 + 0] = val * 4;
 				data[x * 3 + 1] = val / 2;
 				data[x * 3 + 2] = val % 3 * 127;

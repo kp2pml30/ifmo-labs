@@ -107,7 +107,7 @@ private:
 		TileHelper();
 		~TileHelper();
 		void InvalidateTiles() noexcept;
-		Tile* GetTile(int x, int y, Complex cornder, Complex diag) noexcept;
+		Tile* GetTile(int x, int y, Complex cornder, Complex diag, int power) noexcept;
 	private:
 		Tile* GetFromPool() noexcept;
 		Tile* Allocate() noexcept;
@@ -130,6 +130,8 @@ private:
 	// to call update
 	std::function<void()> scheduler;
 
+	int power = 2;
+
 	void RenderSmth(QPainter& painter, int width, int height);
 public:
 	MandelbrotHolder(std::function<void()> scheduler);
@@ -137,6 +139,7 @@ public:
 	void Paint(QPainter& painter);
 	void Scale(PrecType by, int width, int height);
 	void Move(int dx, int dy);
+	void SetPower(int power);
 
 	~MandelbrotHolder();
 };
