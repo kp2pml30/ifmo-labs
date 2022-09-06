@@ -18,32 +18,25 @@
 
 \import tt13
 
-\class Setoid (A : \Type)
-  | \infix 4 == : A -> A -> \Prop
-  | ==-reflexive {x : A} : x == x
-  | ==-symmetric {x y : A} : x == y -> y == x
-  | ==-transitive {x y z : A} : x == y -> y == z -> x == z
-
-\func toQuotient {B : \Type} (s : Setoid B) (x : B) : Quotient {B} (s.==) => in~ x
-
-{-
-\truncated \data Quotient {A : \Type} (R : A -> A -> \Type) : \Set
-  | in~ A
-  | ~-equiv (x y : A) (R x y) (i : I) \elim i {
-    | left => in~ x
-    | right => in~ y
+\class Setoid (S : \Type)
+  | \infix 4 ~ : S -> S -> \Prop
+  | ~-reflexive {x : S} : x ~ x
+  | ~-symmetric {x y : S} : x ~ y -> y ~ x
+  | ~-transitive {x y z : S} : x ~ y -> y ~ z -> x ~ z
+  \where {
+    \use \coerce toQuotient (S : Setoid) : \Type => Quotient {S.S} (S.~)
+    \func toQuotionEl {P : Setoid} (x : P.S) : Quotient {P.S} (P.~) => in~ x
   }
- -}
 
 \instance ModSetoid (k : Nat) : Setoid Int
-  | == (a : Int) (b : Int) =>
+  | ~ (a : Int) (b : Int) =>
     \let
     | am => a IntEuclidean.mod suc k
     | bm => b IntEuclidean.mod suc k
     \in am = bm
-  | ==-reflexive => idp
-  | ==-symmetric => inv
-  | ==-transitive => *>
+  | ~-reflexive => idp
+  | ~-symmetric => inv
+  | ~-transitive => *>
 
 \func task3Extend<=
   {b : Nat}
@@ -176,40 +169,114 @@
         }
     }
 
-{-
+{- task2 by nh5 -}
+\func equiv (A B : \Prop) => \Sigma (A -> B) (B -> A)
 
-\func task3'
-  (myEquiv : Equivalence Nat)
-  (x : Nat)
-  : \Sigma (min : Nat)
-    (proofSat : min myEquiv.~ x)
-    (proofMin :
-      \Pi (any : Nat) ->
-      any myEquiv.~ x ->
-      min NatSemiring.<= any)
-  =>
-    {?}
+\func setoidFromEquiv {S : \Set} {P : \Set} (E : P -> S -> \Prop) : Setoid S \cowith
+  | ~ (x y : S) => \Pi (p : P) -> equiv (E p x) (E p y)
+  | ~-reflexive => \lam p => (id, id)
+  | ~-symmetric {x y : S} (x~y : x ~ y) => \lam p => ((x~y p).2, (x~y p).1)
+  | ~-transitive {x y z : S} (x~y : x ~ y) (y~z : y ~ z) => \lam p => ((y~z p).1 o (x~y p).1, (x~y p).2 o (y~z p).2)
 
-\func task3''
-  (R : Nat -> \Prop)
-  (x : Nat)
-  : ∃ (min : Nat)
-           (proofSat : R x)
-           (proofMin :
-           \Pi (any : Nat) ->
-               R any ->
-               min NatSemiring.<= any)
-  =>
-    {?}
+\func setoidFromS {I : \Set} {S : \Set} (A : I -> S -> \Prop) => setoidFromEquiv A
+\func setoidFromI {I : \Set} {S : \Set} (A : I -> S -> \Prop) => setoidFromEquiv (\lam x i => A i x)
 
-\func task3'''
-  (R : Nat -> \Prop)
-  (any : Nat)
-  (proofSat : R any)
-  : ∃ (another : Nat)
-    (proofSat : R another)
-    (proofLess : another NatSemiring.< any)
-  =>
-    {?}
+\func quotFromS {I : \Set} {S : \Set} (A : I -> S -> \Prop) => Setoid.toQuotient (setoidFromS A)
+\func quotFromI {I : \Set} {S : \Set} (A : I -> S -> \Prop) => Setoid.toQuotient (setoidFromI A)
 
- -}
+\func recA {I : \Set} {S : \Set} (A : I -> S -> \Prop) (i : I) (s : quotFromS A) : \Prop
+\elim s
+  | in~ a => A i a
+  | ~-equiv x y r i1 => propExt (r i).1 (r i).2 @ i1
+
+\func recI {I : \Set} {S : \Set} (A : I -> S -> \Prop) (i : quotFromI A) (s : S) : \Prop
+\elim i
+  | in~ a => A a s
+  | ~-equiv x y r i1 => propExt (r s).1 (r s).2 @ i1
+
+\func recAI {I : \Set} {S : \Set} (A : I -> S -> \Prop) (i : quotFromI A) (x : quotFromS A) : \Prop
+\elim i, x
+  | in~ i, in~ x => A i x
+  | in~ i, ~-equiv x x' r i1 => propExt (r i).1 (r i).2 @ i1
+  | ~-equiv i i' r i1, in~ x => propExt (r x).1 (r x).2 @ i1
+
+\func recAIin=>recI {I : \Set} {S : \Set} (A : I -> S -> \Prop) (i : quotFromI A) (x : S) (p : recAI A i (in~ x)) : recI A i x \elim i, x
+  | in~ a, x => p
+
+\func notEmpty {I : \Set} {S : \Set} (A : I -> S -> \Prop) (i : quotFromI A) => ∃ (x : quotFromS A) (recAI A i x)
+
+{- Task 2 -}
+\class SetoidChoice \extends LEM
+  | setoidChoice :
+  \Pi (I : \Set) (S : \Set) (A : I -> S -> \Prop) (not_empty : \Pi (i : quotFromI A) -> notEmpty A i) ->
+      ∃ (f : \Pi (i : quotFromI A) -> S) (\Pi (i : quotFromI A) -> recI A i (f i))
+  | lem (P : \Prop) =>
+    \case setoidChoice Bool Bool (A P) (not_empty P) \with {
+      | inP (f, p) => \case f (in~ false) \as f0, idp : f (in~ false) = f0, f (in~ true) \as f1, idp : f (in~ true) = f1 \with {
+        | false, p0, false, p1 => \case p (in~ true) \with {
+          | byLeft a => contradiction
+          | byRight b => yes b
+        }
+        | false, p0, true, p1 => no (\lam (pyes : P) => true/=false (inv $ inv p0 *> f~false=f~true P f pyes *> p1))
+        | true, p0, false, p1 => no (\lam (pyes : P) => true/=false (inv p0 *> f~false=f~true P f pyes *> p1))
+        | true, p0, true, p1 => \case p (in~ false) \with {
+          | byLeft a => contradiction
+          | byRight b => yes b
+        }
+      }
+    }
+  \where {
+    \func f~false=f~true (P : \Prop) (f : \Pi (i : quotFromI (A P)) -> Bool) (pyes : P) : f (in~ false) = f (in~ true) =>
+      pmap f (path (~-equiv false true (\lam _ => (\lam _ => byRight pyes, \lam _ => byRight pyes) : \Pi (x : Bool) -> equiv (A P false x) (A P true x))))
+
+    \func A (P : \Prop) (i : Bool) (s : Bool) : \Prop \elim i
+      | false => (s = false) || P
+      | true => (s = true) || P
+
+    \func not_empty (P : \Prop) (i : quotFromI (A P)) : notEmpty (A P) i \elim i
+      | in~ a => \case \elim a \with {
+        | false => inP (in~ false, byLeft idp)
+        | true => inP (in~ true, byLeft idp)
+      }
+  }
+{- end of task2 by nh5 -}
+
+\func elementOfSet {S : \Set} (P : S -> \Prop) : \Set => \Sigma (a : S) (p : P a)
+
+-- quotFromI A === Quotient (~)
+
+\class Task8 \extends AC, SetoidChoice
+  | setoidChoice (I : \Set) (S : \Set) (A : I -> S -> \Prop) (not_empty : \Pi (i : quotFromI A) -> notEmpty A i) =>
+    {-
+    : ∃ (f : \Pi (i : quotFromI A) -> S)
+        (\Pi (i : quotFromI A) -> recI A i (f i))
+     -}
+    \let
+      | choice
+        : ∃ (\Pi (i : quotFromI A) -> elementOfSet (recI A i))
+        => axiomOfChoice
+            (\lam (i : quotFromI A) => elementOfSet (recI A i))
+            (\lam i =>
+              TruncP.rec
+                TruncP.levelProp
+                (not_empty i)
+                (\lam (x, px) =>  aaaa A not_empty i x px))
+    \in
+      TruncP.map
+        choice
+        (\lam (f : \Pi (x : quotFromI A) -> elementOfSet (recI A x)) =>
+            (\lam i => (f i).1,
+             \lam i => (f i).2))
+  \where {
+    \func aaaa
+      {I : \Set}
+      {S : \Set}
+      (A : I -> S -> \Prop)
+      (not_empty : \Pi (i : quotFromI A) -> notEmpty A i)
+      (i : quotFromI A)
+      (x : Setoid.toQuotient (setoidFromS A))
+      (px : recAI A i x)
+      : ∃ (elementOfSet $ recI A i)
+    \elim x
+      | in~ x' => inP (x', recAIin=>recI A i x' px)
+  }
