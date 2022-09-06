@@ -1,0 +1,1 @@
+I got schizophrenia, better look into hashmap
