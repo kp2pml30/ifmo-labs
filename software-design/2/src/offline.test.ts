@@ -1,5 +1,10 @@
 import {describe, expect, test} from '@jest/globals';
 import {jest} from '@jest/globals';
+import {mocked} from 'jest-mock'
+import fetch from 'node-fetch';
+
+jest.mock('node-fetch')
+
 import * as i from './index';
 
 import { strict as assert } from 'node:assert';
@@ -59,7 +64,27 @@ class MockResponser {
 		this.results = results
 	}
 
-	async get(url: URL): Promise<i.BadResult | i.OkResult> {
+	fakeMock() {
+		mocked(fetch).mockImplementation(((url0: URL | RequestInfo, init?: RequestInit | undefined): Promise<Response> => {
+			const url = url0 as URL
+			this.getCounts++
+			const page = url.searchParams.get("pageToken")
+			let res = this.results.get(page)
+			if (res === undefined) {
+				return Promise.resolve({
+					status: 400,
+					ok: false,
+				} as unknown as Response)
+			}
+			return Promise.resolve({
+				status: 200,
+				ok: true,
+				json: () => Promise.resolve(res)
+			} as unknown as Response)
+		}) as unknown as typeof fetch)
+	}
+
+	async get(url: URL): Promise<i.BadResult | unknown> {
 		this.getCounts++
 		const page = url.searchParams.get("pageToken")
 		let res = this.results.get(page)
@@ -185,7 +210,8 @@ const noComments = Array<i.CommentResource>(0)
 
 test('mock constructor fails on empty', () => {
 	expect(() => {
-		i.getCommentsStats(new MockResponser(new ResultsType(undefined, new Map())), mockVideoId, 10)
+		new MockResponser(new ResultsType(undefined, new Map())).fakeMock()
+		i.getCommentsStats(mockVideoId, 10)
 	}).toThrow()
 })
 
@@ -194,7 +220,8 @@ test('empty page', async () => {
 	const rp = m.builder([]).finish()
 	const hours = 30
 	let expected = m.getDates(hours)
-	let got = await i.getCommentsStats(new MockResponser(rp), mockVideoId, hours)
+	new MockResponser(rp).fakeMock()
+	let got = await i.getCommentsStats(mockVideoId, hours)
 	expect(got).toEqual(expected)
 })
 
@@ -208,7 +235,8 @@ test('one page', async () => {
 	const hours = 4
 	let expected = m.getDates(hours)
 	expect(expected).toEqual([0, 1, 1, 1])
-	let got = await i.getCommentsStats(new MockResponser(rp), mockVideoId, hours)
+	new MockResponser(rp).fakeMock()
+	let got = await i.getCommentsStats(mockVideoId, hours)
 	expect(got).toEqual(expected)
 })
 
@@ -228,7 +256,8 @@ test('two pages', async () => {
 	const hours = 4
 	let expected = m.getDates(hours)
 	expect(expected).toEqual([0, 1, 1, 2])
-	let got = await i.getCommentsStats(new MockResponser(rp), mockVideoId, hours)
+	new MockResponser(rp).fakeMock()
+	let got = await i.getCommentsStats(mockVideoId, hours)
 	expect(got).toEqual(expected)
 })
 
@@ -248,7 +277,8 @@ test('fast break', async () => {
 
 	const hours = 4
 	const responser = new MockResponser(rp)
-	let got = await i.getCommentsStats(responser, mockVideoId, hours)
+	responser.fakeMock()
+	let got = await i.getCommentsStats(mockVideoId, hours)
 	expect(responser.getCounts).toEqual(1)
 	expect(got).toEqual([0, 1, 0, 0])
 })
@@ -273,7 +303,8 @@ test('bad next page token1', async () => {
 
 	const hours = 4
 	const responser = new MockResponser(rp)
-	let got = await i.getCommentsStats(responser, mockVideoId, hours)
+	responser.fakeMock()
+	let got = await i.getCommentsStats(mockVideoId, hours)
 	expect(responser.getCounts).toEqual(2)
 	expect(got).toEqual({kind: "bad", statusCode: 400})
 })

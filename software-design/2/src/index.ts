@@ -1,36 +1,15 @@
 import * as fs from 'fs';
-import * as fetch from 'node-fetch';
+import fetch from 'node-fetch';
 
 import { strict as assert } from 'node:assert';
 
 const apikey = fs.readFileSync('api.key','utf8').trim()
 
+export const YoutubeCommentTreadsURL = "https://www.googleapis.com/youtube/v3/commentThreads"
+
 export interface BadResult {
 	kind: "bad"
 	statusCode: number
-}
-
-export interface OkResult {
-	kind: "ok"
-	json: any
-}
-
-export interface Responser {
-	get(url: URL): Promise<BadResult | OkResult>
-}
-
-class DefaultResponser {
-	async get(url: URL): Promise<BadResult | OkResult> {
-		const response = await fetch.default(url.toString(), { method: 'GET' })
-		if (!response.ok) {
-			return {kind: "bad", statusCode: response.status}
-		}
-		return {kind: "ok", json: await response.json()}
-	}
-}
-
-export function defaultSock(): Responser {
-	return new DefaultResponser()
 }
 
 export interface CommentResource {
@@ -89,13 +68,13 @@ function getDatesDiffHours(a: Date, b: Date) {
 }
 
 // how to do a dependent type Array<number, hours>?
-export async function getCommentsStats(sock: Responser, videoId: string, maxHours: number): Promise<BadResult | Array<number>> {
+export async function getCommentsStats(videoId: string, maxHours: number, baseUrl: string = YoutubeCommentTreadsURL): Promise<BadResult | Array<number>> {
 	const commentsByHour = Array<number>(maxHours).fill(0)
 	const now = new Date()
 
 	var nextPage: undefined | string
 
-	const url = new URL("https://www.googleapis.com/youtube/v3/commentThreads");
+	const url = new URL(baseUrl);
 	const params: Array<[string, string]> = [
 		["key", apikey],
 		["maxResults", "100"],
@@ -113,29 +92,27 @@ loop:
 			url.searchParams.set("pageToken", nextPage)
 		}
 
-		const res = await sock.get(url)
-		switch (res.kind) {
-		case "bad":
-			return res
-		case "ok":
-			const r = res.json as ThreadListResponse
+		const response = await fetch(url, { method: 'GET' })
+		if (!response.ok) {
+			return {kind: "bad", statusCode: response.status}
+		}
+		const r = await response.json() as ThreadListResponse
 
-			for (const c of r.items) {
-				const date = new Date(c.snippet.topLevelComment.snippet.publishedAt)
-				const hours = getDatesDiffHours(now, date)
-				assert.equal(hours >= 0, true)
-				if (hours >= maxHours) {
-					return commentsByHour
-				} else {
-					commentsByHour[Math.floor(hours)]++
-				}
-			}
-
-			if (typeof r.nextPageToken === "string" && r.nextPageToken !== "") {
-				nextPage = r.nextPageToken
+		for (const c of r.items) {
+			const date = new Date(c.snippet.topLevelComment.snippet.publishedAt)
+			const hours = getDatesDiffHours(now, date)
+			assert.equal(hours >= 0, true)
+			if (hours >= maxHours) {
+				return commentsByHour
 			} else {
-				break loop
+				commentsByHour[Math.floor(hours)]++
 			}
+		}
+
+		if (typeof r.nextPageToken === "string" && r.nextPageToken !== "") {
+			nextPage = r.nextPageToken
+		} else {
+			break loop
 		}
 	}
 
