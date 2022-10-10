@@ -2,8 +2,7 @@ import {describe, expect, test} from '@jest/globals';
 import {jest} from '@jest/globals';
 import {mocked} from 'jest-mock'
 import fetch from 'node-fetch';
-
-jest.mock('node-fetch')
+import * as http from 'http';
 
 import * as i from './index';
 
@@ -19,7 +18,8 @@ function getBeforeHours(hours: number): Date {
 
 jest
 	.useFakeTimers()
-	.setSystemTime(fakeNow);
+	.setSystemTime(fakeNow)
+jest.mock('node-fetch')
 
 test('testing works', () => {
 	expect(1).toBe(1)
@@ -55,6 +55,8 @@ class ResultsType {
 	}
 }
 
+var nextPort = 0
+
 class MockResponser {
 	results: ResultsType
 	getCounts = 0
@@ -82,6 +84,41 @@ class MockResponser {
 				json: () => Promise.resolve(res)
 			} as unknown as Response)
 		}) as unknown as typeof fetch)
+	}
+
+	async fakeHttp(cb: (url: string) => Promise<void>) {
+		const port = 30303 //+ nextPort++
+		const fakeUrl = `http://127.0.0.1:${port}`
+
+		const requestListener = (hreq: http.IncomingMessage, hres: http.ServerResponse) => {
+			const url = new URL(hreq.url as string, fakeUrl)
+			this.getCounts++
+			const page = url.searchParams.get("pageToken")
+			let res = this.results.get(page)
+			if (res === undefined) {
+				hres.writeHead(400)
+				hres.end()
+				return
+			}
+			hres.writeHead(200)
+			hres.end(JSON.stringify(res))
+		}
+		const serv = http.createServer(requestListener)
+
+		serv.listen(port)
+		try {
+			await cb(fakeUrl)
+		} finally {
+			await new Promise((resolve, reject) => {
+				serv.close((err: Error | undefined) => {
+					if (err === undefined) {
+						resolve(null)
+					} else {
+						reject(err)
+					}
+				})
+			})
+		}
 	}
 
 	async get(url: URL): Promise<i.BadResult | unknown> {
@@ -208,6 +245,19 @@ class ThreadMaker {
 
 const noComments = Array<i.CommentResource>(0)
 
+const originalFetch = jest.requireActual('node-fetch') as any
+
+async function verifyWithHttp(m0: MockResponser, rp: ResultsType, oldGot: number[] | i.BadResult, hours: number) {
+	mocked(fetch).mockImplementation(originalFetch)
+	const m1 = new MockResponser(rp)
+	await m1.fakeHttp( async (url: string) => {
+		const got1 = await i.getCommentsStats(mockVideoId, hours, url)
+		expect(m0.getCounts).toEqual(m1.getCounts)
+		expect(got1).toEqual(oldGot)
+	})
+	jest.mock('node-fetch')
+}
+
 test('mock constructor fails on empty', () => {
 	expect(() => {
 		new MockResponser(new ResultsType(undefined, new Map())).fakeMock()
@@ -219,10 +269,13 @@ test('empty page', async () => {
 	const m = new ThreadMaker()
 	const rp = m.builder([]).finish()
 	const hours = 30
-	let expected = m.getDates(hours)
-	new MockResponser(rp).fakeMock()
-	let got = await i.getCommentsStats(mockVideoId, hours)
+	const expected = m.getDates(hours)
+	const m0 = new MockResponser(rp)
+	m0.fakeMock()
+	const got = await i.getCommentsStats(mockVideoId, hours)
 	expect(got).toEqual(expected)
+
+	await verifyWithHttp(m0, rp, got, hours)
 })
 
 test('one page', async () => {
@@ -233,11 +286,14 @@ test('one page', async () => {
 		m.thread(m.comment(getBeforeHours(3)), [])
 	]).finish()
 	const hours = 4
-	let expected = m.getDates(hours)
+	const expected = m.getDates(hours)
 	expect(expected).toEqual([0, 1, 1, 1])
-	new MockResponser(rp).fakeMock()
-	let got = await i.getCommentsStats(mockVideoId, hours)
+	const m0 = new MockResponser(rp)
+	m0.fakeMock()
+	const got = await i.getCommentsStats(mockVideoId, hours)
 	expect(got).toEqual(expected)
+
+	await verifyWithHttp(m0, rp, got, hours)
 })
 
 test('two pages', async () => {
@@ -254,11 +310,14 @@ test('two pages', async () => {
 		])
 		.finish()
 	const hours = 4
-	let expected = m.getDates(hours)
+	const expected = m.getDates(hours)
 	expect(expected).toEqual([0, 1, 1, 2])
-	new MockResponser(rp).fakeMock()
-	let got = await i.getCommentsStats(mockVideoId, hours)
+	const m0 = new MockResponser(rp)
+	m0.fakeMock()
+	const got = await i.getCommentsStats(mockVideoId, hours)
 	expect(got).toEqual(expected)
+
+	await verifyWithHttp(m0, rp, got, hours)
 })
 
 test('fast break', async () => {
