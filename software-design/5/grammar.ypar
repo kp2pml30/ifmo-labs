@@ -1,0 +1,33 @@
+-- module Gen.Parser (parse) where
+--
+-- import Data.Maybe
+-- import Tokens
+-- import Ast
+
+%constraints a
+%token Token a
+%file Ast a
+
+lpar <== TLpar
+rpar <== TRpar
+num <== TNum a
+	==> ANum a
+addsub
+	<== TOp op | op == Add || op == Sub
+	==> \l r -> AOp l op r
+muldiv
+	<== TOp op | op == Mul || op == Div
+	==> \l r -> AOp l op r
+
+FILE
+	| EXPR ==> id
+
+EXPR
+	| ADDSUB ==> id
+
+%oper l ADDSUB addsub MULDIV
+%oper l MULDIV muldiv ATOM
+
+ATOM
+	| num ==> id
+	| lpar EXPR rpar ==> \_ e _ -> e

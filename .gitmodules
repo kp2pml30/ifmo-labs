@@ -4,3 +4,6 @@
 [submodule "data-analysis"]
 	path = data-analysis
 	url = git@github.com:kp2pml30/ifmo-labs-data-analysis.git
+[submodule "software-design/hw-software-design"]
+	path = software-design/hw-software-design
+	url = git@github.com:kp2pml30/hw-software-design.git

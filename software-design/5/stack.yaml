@@ -1,0 +1,5 @@
+resolver: lts-19.22
+
+packages:
+  - src
+  - /home/kapuralu/work/yada/src/parser-generator-runtime
