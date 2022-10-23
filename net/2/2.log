@@ -1,0 +1,101 @@
+sudo openvpn --config ~/Downloads/config-linux\ -2.ovpn 
+
+
+➜ sudo dhcpcd -n tap0
+dhcpcd-9.4.1 starting
+DUID 00:04:cd:2d:4e:43:fe:c6:11:e9:81:02:7c:8a:e1:10:d1:0a
+tap0: IAID 19:85:18:10
+tap0: soliciting a DHCP lease
+tap0: soliciting an IPv6 router
+tap0: Router Advertisement from fe80::c878:17ff:fe11:7b40
+tap0: adding address fdca:adff:c1af:974a:c7d9:6ccb:de43:8f13/64
+tap0: adding route to fdcd:8937:a86b:4b2d::/64
+tap0: adding route to fdca:adff:c1af:974a::/64
+tap0: adding default route via fe80::c878:17ff:fe11:7b40
+tap0: soliciting a DHCPv6 lease
+Failed to revert interface configuration: Unit dbus-org.freedesktop.resolve1.service not found.
+tap0: offered 10.160.224.100 from 10.160.224.254
+tap0: REPLY6 received from fe80::c878:17ff:fe11:7b40
+tap0: adding address fdcd:8937:a86b:4b2d::144b/128
+tap0: renew in 60, rebind in 105, expire in 120 seconds
+tap0: probing address 10.160.224.100/24
+Failed to revert interface configuration: Unit dbus-org.freedesktop.resolve1.service not found.
+forked to background, child pid 23534
+
+ifmo-labs/net/2 on  master [⇡!?] took 5s 246ms 
+➜ ip addr show tap0
+11: tap0: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc fq_codel state UNKNOWN group default qlen 1000
+    link/ether 46:a0:19:85:18:10 brd ff:ff:ff:ff:ff:ff
+    inet 10.160.224.100/24 brd 10.160.224.255 scope global dynamic noprefixroute tap0
+       valid_lft 115sec preferred_lft 100sec
+    inet6 fdcd:8937:a86b:4b2d::144b/128 scope global dynamic noprefixroute 
+       valid_lft 111sec preferred_lft 111sec
+    inet6 fdca:adff:c1af:974a:c7d9:6ccb:de43:8f13/64 scope global dynamic mngtmpaddr noprefixroute 
+       valid_lft 3588sec preferred_lft 3588sec
+    inet6 fdca:adff:c1af:974a:44a0:19ff:fe85:1810/64 scope global dynamic mngtmpaddr 
+       valid_lft 3440sec preferred_lft 3440sec
+    inet6 fe80::44a0:19ff:fe85:1810/64 scope link 
+       valid_lft forever preferred_lft forever
+
+
+это прошло 2 задания на рандом... ну ладно...
+
+<10 экранов мусора>
+
+irb(main):001:1* (0..255).each { |s|
+irb(main):002:1*   system "ping -I tap0 -c 1 -n -w 1 10.160.224.#{s} && notify-send 'SUCCESS!'"
+irb(main):003:0> }
+
+на .100 что-то есть (YA)
+
+Вопрос: почему за получение адреса у DHCP и DHCPv6-серверов баллы есть, а за SLAAC нет? Ответ на него укажите в отчёте.
+для автокинфигурации => он не знает?
+> В отличие от сервера DHCP, сервер SLAAC не знает, какие IPv6-адреса используются, а какие доступны.
+
+➜ ping -I tap0 fdcd:8937:a86b:4b2d::35
+PING fdcd:8937:a86b:4b2d::35(fdcd:8937:a86b:4b2d::35) from fdcd:8937:a86b:4b2d::144b tap0: 56 data bytes
+64 bytes from fdcd:8937:a86b:4b2d::35: icmp_seq=1 ttl=64 time=87.8 ms
+64 bytes from fdcd:8937:a86b:4b2d::35: icmp_seq=2 ttl=64 time=7.73 ms
+
+ifmo-labs/net/2 on  master [⇡!?] 
+➜ dig @fdcd:8937:a86b:4b2d::35 zubni6uktrzpob3as2yoktld.localnetwork ANY
+
+; <<>> DiG 9.18.2 <<>> @fdcd:8937:a86b:4b2d::35 zubni6uktrzpob3as2yoktld.localnetwork ANY
+; (1 server found)
+;; global options: +cmd
+;; Got answer:
+;; ->>HEADER<<- opcode: QUERY, status: NOERROR, id: 24067
+;; flags: qr aa rd; QUERY: 1, ANSWER: 1, AUTHORITY: 0, ADDITIONAL: 1
+;; WARNING: recursion requested but not available
+
+;; OPT PSEUDOSECTION:
+; EDNS: version: 0, flags:; udp: 1232
+;; QUESTION SECTION:
+;zubni6uktrzpob3as2yoktld.localnetwork. IN ANY
+
+;; ANSWER SECTION:
+zubni6uktrzpob3as2yoktld.localnetwork. 600 IN SOA ns.zubni6uktrzpob3as2yoktld.localnetwork. admin.zubni6uktrzpob3as2yoktld.localnetwork. 1 3600 10 3600000 10
+
+;; Query time: 9 msec
+;; SERVER: fdcd:8937:a86b:4b2d::35#53(fdcd:8937:a86b:4b2d::35) (TCP)
+;; WHEN: Sun May 15 19:03:47 MSK 2022
+;; MSG SIZE  rcvd: 111
+
+ifmo-labs/net/2 on  master [⇡!?] 
+➜ nslookup zubni6uktrzpob3as2yoktld.localnetwork fdcd:8937:a86b:4b2d::35
+Server:		fdcd:8937:a86b:4b2d::35
+Address:	fdcd:8937:a86b:4b2d::35#53
+
+Name:	zubni6uktrzpob3as2yoktld.localnetwork
+Address: fdca:adff:c1af:974a:6b:f2ff:fe24:d750
+
+
+ifmo-labs/net/2 on  master [⇡!?] 
+➜ ping -I tap0 fdca:adff:c1af:974a:6b:f2ff:fe24:d750
+
+http://[fdca:adff:c1af:974a:6b:f2ff:fe24:d750]:9229
+
+➜ ping -I tap0 fdca:adff:c1af:974a:da:9eff:fec3:dc6b
+PING fdca:adff:c1af:974a:da:9eff:fec3:dc6b(fdca:adff:c1af:974a:da:9eff:fec3:dc6b) from fdca:adff:c1af:974a:c7d9:6ccb:de43:8f13 tap0: 56 data bytes
+64 bytes from fdca:adff:c1af:974a:da:9eff:fec3:dc6b: icmp_seq=1 ttl=64 time=95.2 ms
+64 bytes from fdca:adff:c1af:974a:da:9eff:fec3:dc6b: icmp_seq=2 ttl=64 time=95.5 ms

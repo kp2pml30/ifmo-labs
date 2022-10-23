@@ -1,0 +1,82 @@
+sudo openvpn --config ~/Downloads/config-linux.ovpn
+ip link
+8: tap0: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc fq_codel state UNKNOWN mode DEFAULT group default qlen 1000
+    link/ether 46:a0:19:85:18:10 brd ff:ff:ff:ff:ff:ff
+
+ip addr
+2: wlan0: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc noqueue state UP group default qlen 1000
+    link/ether 40:5b:d8:03:ba:2b brd ff:ff:ff:ff:ff:ff
+    inet 192.168.0.11/24 brd 192.168.0.255 scope global noprefixroute wlan0
+       valid_lft forever preferred_lft forever
+8: tap0: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc fq_codel state UNKNOWN group default qlen 1000
+    link/ether 46:a0:19:85:18:10 brd ff:ff:ff:ff:ff:ff
+    inet6 fe80::44a0:19ff:fe85:1810/64 scope link 
+       valid_lft forever preferred_lft forever
+
+➜ sudo ip addr add 10.248.117.16/24 dev tap0
+
+ifmo-labs/net/1
+➜ sudo ip addr show tap0
+8: tap0: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc fq_codel state UNKNOWN group default qlen 1000
+    link/ether 46:a0:19:85:18:10 brd ff:ff:ff:ff:ff:ff
+    inet 10.248.117.16/24 scope global tap0
+       valid_lft forever preferred_lft forever
+
+ping 10.248.117.223
+PING 10.248.117.223 (10.248.117.223) 56(84) bytes of data.
+64 bytes from 10.248.117.223: icmp_seq=1 ttl=64 time=89.9 ms
+
+➜ sudo arping 10.248.117.223
+ARPING 10.248.117.223 from 10.248.117.16 tap0
+Unicast reply from 10.248.117.223 [02:A7:C7:09:2F:93]  19.019ms
+
+ping -I tap0 ff02::1
+ping: Warning: source address might be selected on device other than: tap0
+PING ff02::1(ff02::1) from :: tap0: 56 data bytes
+64 bytes from fe80::44a0:19ff:fe85:1810%tap0: icmp_seq=1 ttl=64 time=0.037 ms
+64 bytes from fe80::c45:b6ff:fe97:c6fa%tap0: icmp_seq=1 ttl=64 time=8.71 ms
+64 bytes from fe80::74ad:46ff:fe3f:adef%tap0: icmp_seq=1 ttl=64 time=11.0 ms
+64 bytes from fe80::24:77ff:fe79:f712%tap0: icmp_seq=1 ttl=64 time=11.0 ms
+64 bytes from fe80::a7:c7ff:fe09:2f93%tap0: icmp_seq=1 ttl=64 time=11.0 ms
+64 bytes from fe80::44a0:19ff:fe85:1810%tap0: icmp_seq=2 ttl=64 time=0.062 ms
+64 bytes from fe80::c45:b6ff:fe97:c6fa%tap0: icmp_seq=2 ttl=64 time=46.9 ms
+64 bytes from fe80::74ad:46ff:fe3f:adef%tap0: icmp_seq=2 ttl=64 time=50.1 ms
+64 bytes from fe80::24:77ff:fe79:f712%tap0: icmp_seq=2 ttl=64 time=50.1 ms
+64 bytes from fe80::a7:c7ff:fe09:2f93%tap0: icmp_seq=2 ttl=64 time=50.1 ms
+
+sudo ip addr add fd33:03e5:96cb:8c59:bbce:6b0f:1c46:390a/64 dev tap0
+[sudo] password for kapuralu: 
+
+ifmo-labs/net/1
+➜ ping -I tap0 fd33:03e5:96cb:8c59:bbce:6b0f:1c46:a49d
+PING fd33:03e5:96cb:8c59:bbce:6b0f:1c46:a49d(fd33:3e5:96cb:8c59:bbce:6b0f:1c46:a49d) from fd33:3e5:96cb:8c59:bbce:6b0f:1c46:390a tap0: 56 data bytes
+64 bytes from fd33:3e5:96cb:8c59:bbce:6b0f:1c46:a49d: icmp_seq=1 ttl=64 time=84.2 ms
+64 bytes from fd33:3e5:96cb:8c59:bbce:6b0f:1c46:a49d: icmp_seq=2 ttl=64 time=6.97 ms
+64 bytes from fd33:3e5:96cb:8c59:bbce:6b0f:1c46:a49d: icmp_seq=3 ttl=64 time=5.69 ms
+^C
+
+ifmo-labs/net/1
+➜ ping -I tap0 10.248.117.223 -s 984
+PING 10.248.117.223 (10.248.117.223) from 10.248.117.16 tap0: 984(1012) bytes of data.
+992 bytes from 10.248.117.223: icmp_seq=1 ttl=64 time=178 ms
+992 bytes from 10.248.117.223: icmp_seq=2 ttl=64 time=344 ms
+^C
+--- 10.248.117.223 ping statistics ---
+2 packets transmitted, 2 received, 0% packet loss, time 1001ms
+rtt min/avg/max/mdev = 178.140/261.308/344.477/83.168 ms
+
+ifmo-labs/net/1
+➜ ping -I tap0 10.248.117.223 -s 985
+PING 10.248.117.223 (10.248.117.223) from 10.248.117.16 tap0: 985(1013) bytes of data.
+^C
+--- 10.248.117.223 ping statistics ---
+3 packets transmitted, 0 received, 100% packet loss, time 2018ms
+
+➜ ip neigh
+10.248.117.223 dev tap0 lladdr 02:a7:c7:09:2f:93 STALE 
+192.168.0.3 dev wlan0 lladdr a8:63:7d:e8:ff:87 REACHABLE 
+fe80::c45:b6ff:fe97:c6fa dev tap0 lladdr 32:de:06:41:47:0a router STALE 
+fe80::74ad:46ff:fe3f:adef dev tap0 lladdr 06:c1:6b:3b:86:dc STALE 
+fd33:3e5:96cb:8c59:bbce:6b0f:1c46:a49d dev tap0 lladdr 02:24:77:79:f7:12 router STALE 
+fe80::a7:c7ff:fe09:2f93 dev tap0 lladdr 02:a7:c7:09:2f:93 router STALE 
+fe80::24:77ff:fe79:f712 dev tap0 lladdr 02:24:77:79:f7:12 router STALE 

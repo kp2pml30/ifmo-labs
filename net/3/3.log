@@ -1,0 +1,100 @@
+sudo openvpn --config ~/Downloads/config-linux\ -3.ovpn
+
+я тут за баллами а не радовать кого-либо.
+
+sudo pacman -S dhcp
+
+sudo cp /etc/dhcpd.conf /etc/dhcpd.conf.example
+
+sudo nvim /etc/dhcpd.conf
+
+содержание где-нбудь ниже плюхну
+
+➜ ip addr show tap0
+3: tap0: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc fq_codel state UNKNOWN group default qlen 1000
+    link/ether 46:a0:19:85:18:10 brd ff:ff:ff:ff:ff:ff
+    inet6 fe80::44a0:19ff:fe85:1810/64 scope link 
+       valid_lft forever preferred_lft forever
+
+sudo ip addr add 10.8.168.30/24 dev tap0
+
+➜ sudo dhcpd
+Internet Systems Consortium DHCP Server 4.4.3
+Copyright 2004-2022 Internet Systems Consortium.
+All rights reserved.
+For info, please visit https://www.isc.org/software/dhcp/
+Not searching LDAP since ldap-server, ldap-port and ldap-base-dn were not specified in the config file
+Config file: /etc/dhcpd.conf
+Database file: /var/lib/dhcp/dhcpd.leases
+PID file: /var/run/dhcpd.pid
+Source compiled to use binary-leases
+Wrote 0 leases to leases file.
+Listening on LPF/tap0/46:a0:19:85:18:10/10.8.168.0/24
+Sending on   LPF/tap0/46:a0:19:85:18:10/10.8.168.0/24
+
+No subnet declaration for wlan0 (192.168.0.11).
+** Ignoring requests on wlan0.  If this is not what
+   you want, please write a subnet declaration
+   in your dhcpd.conf file for the network segment
+   to which interface wlan0 is attached. **
+
+Sending on   Socket/fallback/fallback-net
+
+вот тут было тяжело понять но вроде все работает
+
+➜ pidof dhcpd
+6627
+
+journalctl -n 100 | grep dhcpd
+
+May 18 18:45:46 kapralhost dhcpd[6627]: DHCPDISCOVER from 02:f4:78:dc:ae:61 via tap0
+May 18 18:45:47 kapralhost dhcpd[6627]: DHCPOFFER on 10.8.168.1 to 02:f4:78:dc:ae:61 (c6f401f91ec1) via tap0
+May 18 18:45:47 kapralhost dhcpd[6627]: DHCPREQUEST for 10.8.168.1 (10.8.168.30) from 02:f4:78:dc:ae:61 (c6f401f91ec1) via tap0
+May 18 18:45:47 kapralhost dhcpd[6627]: DHCPACK on 10.8.168.1 to 02:f4:78:dc:ae:61 (c6f401f91ec1) via tap0
+
+^ вот тут видно мак
+
+sudo cp /etc/dhcpd6.conf /etc/dhcpd6.conf.example
+
+sudo pacman -S radvd
+
+вот тут кажется можно обучиться: https://github.com/fengf233/dhcpv6-slaac-server-build-script/blob/master/dhcpv6_slaac.sh
+
+sudo ip -6 addr add fe80::44a0:19ff:30:30/64 dev tap0
+
+    inet6 fe80::44a0:19ff:30:30/64 scope link 
+       valid_lft forever preferred_lft forever
+
+
+subnet6 fdbb:78ba:7222:894d::/64 {
+	interface tap0;
+	allow leasequery;
+}
+
+# /etc/dhcpd.conf
+option domain-name-servers 8.8.8.8, 8.8.4.4;
+option subnet-mask 255.255.255.0;
+option routers 10.8.168.30;
+subnet 10.8.168.0 netmask 255.255.255.0 {
+  range 10.8.168.1 10.8.168.1;
+}
+
+# radvd conf
+
+interface tap0 {
+  AdvSendAdvert on;
+  MinRtrAdvInterval 3;
+  MaxRtrAdvInterval 10;
+  prefix fdbb:78ba:7222:894d::/64 {
+    AdvOnLink on;
+    AdvAutonomous on;
+    AdvRouterAddr on;
+  };
+
+	prefix 2001:db8:1:0::/64
+	{
+		AdvOnLink on;
+		AdvAutonomous on;
+		AdvRouterAddr off;
+	};
+};
