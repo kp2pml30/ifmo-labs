@@ -276,6 +276,7 @@ void MandelbrotHolder::SetPower(int power)
 		return;
 	this->power = power;
 	tilesData.InvalidateTiles();
+	scheduler();
 }
 
 MandelbrotHolder::~MandelbrotHolder()
