@@ -1,0 +1,28 @@
+name: yada-pargen-runtime
+version: '0.0.1'
+license: GPL-3
+github: kp2pml30/yada
+
+dependencies:
+  - base
+  - text
+
+ghc-options: 
+  - -Wall
+  - -Wno-name-shadowing
+  - -Wno-tabs
+
+default-extensions: 
+  - BlockArguments
+  - BangPatterns
+  - RecordWildCards
+  - BlockArguments
+  - DerivingStrategies
+  - GeneralizedNewtypeDeriving
+  - NamedFieldPuns
+  - OverloadedStrings
+  - LambdaCase
+
+library:
+  source-dirs: library/
+  exposed-modules: Yada.ParGen.Runtime

@@ -1,0 +1,16 @@
+name: yada-pargen-runtime
+version: '<%= $opt["version"] %>'
+license: <%= $opt["license"] %>
+github: kp2pml30/yada
+
+dependencies:
+  - base
+  - text
+
+ghc-options: <%= $opt["ghc-options-str"] %>
+
+default-extensions: <%= $opt["default-extensions-str"] %>
+
+library:
+  source-dirs: library/
+  exposed-modules: Yada.ParGen.Runtime
