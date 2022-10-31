@@ -3,3 +3,7 @@
 build
 dist-newstyle
 hie.yaml
+.cache
+.gdb_history
+.vscode
+.ipynb_checkpoints
