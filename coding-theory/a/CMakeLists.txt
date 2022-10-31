@@ -5,6 +5,9 @@ set(CMAKE_CXX_STANDARD 20)
 add_compile_options(-Wall -Wextra -Wno-dangling-else)
 
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin/")
-add_definitions(-D_DEBUG)
+
+if ("${CMAKE_BUILD_TYPE}" STREQUAL "Debug")
+	add_definitions(-D_DEBUG)
+endif()
 
 add_executable(coding-therory-a a.cpp)

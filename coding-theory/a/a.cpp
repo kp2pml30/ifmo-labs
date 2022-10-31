@@ -2,6 +2,7 @@
 #include <functional>
 #include <iostream>
 #include <bitset>
+#include <limits>
 #include <string>
 #include <tuple>
 #include <utility>
@@ -15,12 +16,17 @@
 #include <string_view>
 #include <array>
 #include <forward_list>
+#include <unordered_map>
+#include <random>
 
 #define let auto const
 
-#ifdef _DEBUG
+#define IS_DBG defined(_DEBUG)
 
-auto cin = std::stringstream(R"delim(8 4
+#ifdef _DEBUG
+#define IS_DBG true
+auto cin = std::stringstream(R"delim(
+8 4
 1 1 1 1 1 1 1 1
 1 1 1 1 0 0 0 0
 1 1 0 0 1 1 0 0
@@ -33,11 +39,15 @@ Simulate 4 100000 100
 )delim");
 using std::cout;
 #else
-using std::cin;
-using std::cout;
+#define IS_DBG false
+#include <fstream>
+//using std::cin;
+//using std::cout;
+auto cin = std::fstream("input.txt", std::ios_base::in);
+auto cout = std::fstream("output.txt", std::ios_base::out);
 #endif
 
-constexpr auto SHOW_DBG = true;
+constexpr auto SHOW_DBG = IS_DBG;
 
 #define DBG if constexpr (SHOW_DBG)
 #define NOP
@@ -283,6 +293,13 @@ DiffResult smartDiff(std::vector<size_t> const& l, std::vector<size_t> const& r)
 struct TrellisNode
 {
 	TrellisNode* to[2] = {};
+	Vec const* ve;
+};
+
+struct DecodingData
+{
+	TrellisNode const* input = nullptr;
+	float distance = std::numeric_limits<float>::max();
 };
 
 class Trellis
@@ -295,17 +312,152 @@ public:
 			pool.emplace_front();
 			idxInPool = 0;
 		}
+		totalNodes++;
 		return &pool.front()[idxInPool++];
 	}
 
+	Trellis() = default;
+	Trellis(Trellis const&) = delete;
+	Trellis& operator=(Trellis const&) = delete;
+
 	std::vector<std::map<Vec, TrellisNode*>> layers;
+	TrellisNode* start;
+
+	Vec decode(std::vector<float> const& w)
+	{
+		decoderData.clear();
+		decoderData.reserve(totalNodes);
+
+		decoderData[start].distance = 0;
+
+		assert(layers.size() == w.size()+1);
+
+		for (let i : std::views::iota((size_t)0, layers.size()))
+		{
+			let& l = layers[i];
+			for (let& [_, from]: l)
+			{
+				auto& me = decoderData[from];
+
+				auto doj = [&](TrellisNode const* to, const float ew) {
+					if (to == nullptr)
+						return;
+					auto& d = decoderData[to];
+					let curDist = me.distance + std::abs(w[i] - ew);
+					//cout << curDist << " by " << me.distance << " ++ " << w[i] << " " << ew << endl;
+					if (d.distance > curDist)
+					{
+						d.distance = curDist;
+						d.input = from;
+					}
+				};
+				doj(from->to[0], 1);
+				doj(from->to[1], -1);
+			}
+		}
+
+		auto ret = Vec();
+		auto const* backtrack = layers.back().begin()->second;
+		//cout << "dist: " << decoderData[backtrack].distance << endl;
+		while (true)
+		{
+			auto i = decoderData[backtrack].input;
+			if (i == nullptr)
+				break;
+			if (i->to[0] == backtrack)
+			{
+				ret.emplace_back(0);
+			}
+			else if (i->to[1] == backtrack)
+			{
+				ret.emplace_back(1);
+			}
+			else
+			{
+				throw "bad backtrack";
+			}
+			backtrack = i;
+		}
+
+		std::reverse(ret.begin(), ret.end());
+		return ret;
+	}
+
+	void toGraphviz(std::ostream& o)
+	{
+		o << "digraph Trellis {";
+		auto lid = size_t(0);
+		for (let& l : layers)
+		{
+			lid++;
+			for (let& [k, n] : l)
+			{
+				for (let j : std::views::iota(0, 2))
+				{
+					let to = n->to[j];
+					if (to == nullptr)
+						continue;
+
+					o << "v" << lid << "_";
+					for (let b : k)
+						o << b;
+					o << " -> v" << (lid+1) << "_";
+					for (let b : *to->ve)
+						o << b;
+					o << " [label=\"" << j << "\"];";
+				}
+			}
+		}
+		o << "}";
+	}
+
 private:
-	std::forward_list<std::array<TrellisNode, 64>> pool = {{}};
+	constexpr static size_t POOL_SIZE = 16;
+	std::forward_list<std::array<TrellisNode, POOL_SIZE>> pool = {{}};
 	size_t idxInPool = 0;
+	size_t totalNodes = 0;
+
+	std::unordered_map<TrellisNode const*, DecodingData> decoderData;
 };
+
+float simulate(size_t n, size_t k, Trellis& trellis, float sigma, size_t iters, size_t maxErrs, auto encode)
+{
+	auto rd = std::random_device();
+	auto gen = std::mt19937(rd());
+	auto booleans = std::uniform_int_distribution<int>(0, 1);
+	auto noiser = std::normal_distribution<float>(0, sigma);
+
+	size_t errs = 0;
+	size_t done = 0;
+
+	auto v0 = Vec(k);
+
+	auto vf = std::vector<float>(n);
+
+	while (done < iters && errs < maxErrs)
+	{
+		for (let i : std::views::iota((size_t)0, k))
+			v0[i] = booleans(gen);
+		let v = encode(v0);
+		for (let i : std::views::iota((size_t)0, n))
+			vf[i] = 1 - v[i] * 2 + noiser(gen);
+
+		let decoded = trellis.decode(vf);
+		assert(decoded.size() == v.size());
+		done++;
+		if (decoded != v)
+			errs++;
+	}
+	DBG cout << "errs/done " << errs << "/" << done << " sigma=" << sigma << endl;
+	return float(errs) / float(done);
+}
 
 int main()
 {
+#ifndef _DEBUG
+	std::ios_base::sync_with_stdio(false);
+	cin.tie(nullptr);
+#endif
 	size_t n, k;
 	cin >> n >> k;
 
@@ -339,6 +491,11 @@ int main()
 	for (let i : std::views::iota((size_t)0, k))
 		for (let j : std::views::iota((size_t)0, n))
 			G0T[j][i] = G0[i][j];
+
+	auto GT = Mat(n ,Vec(k));
+	for (let i : std::views::iota((size_t)0, k))
+		for (let j : std::views::iota((size_t)0, n))
+			GT[j][i] = G[i][j];
 
 	//==== calc v_i
 	auto activeNodes = std::vector<std::vector<size_t>>(n+1);
@@ -400,28 +557,29 @@ int main()
 	};
 
 
-	auto trellis = std::vector<std::map<Vec, std::pair<Vec const*, Vec const*>>>(n+1);
+	auto trellis = Trellis();
+	trellis.layers.resize(n+1);
 
 	auto printGraph = [&](){
 		auto i = size_t(0);
-		for (let& layer : trellis)
+		for (let& layer : trellis.layers)
 		{
 			cout << i++ << endl;
 			for (let& [k, v] : layer)
 			{
 				pLayerId(cout << "\t{", k) << "} -> [";
 
-				if (v.first == nullptr)
+				if (v->to[0] == nullptr)
 					cout << "_";
 				else
-					pLayerId(cout, *v.first);
+					pLayerId(cout, *v->to[0]->ve);
 
 				cout << " ";
 
-				if (v.second == nullptr)
+				if (v->to[1] == nullptr)
 					cout << "_";
 				else
-					pLayerId(cout, *v.second);
+					pLayerId(cout, *v->to[1]->ve);
 
 				cout << "]" << endl;
 			}
@@ -429,11 +587,15 @@ int main()
 	};
 
 
-	trellis[0][Vec()] = std::make_pair(nullptr, nullptr);
+	{
+		auto node = trellis.alloc();
+		node->ve = &trellis.layers[0].emplace(Vec(), node).first->first;
+		trellis.start = node;
+	}
 	for (let i : std::views::iota(size_t(0), n))
 	{
-		auto& last = trellis[i];
-		auto& next = trellis[i+1];
+		auto& last = trellis.layers[i];
+		auto& next = trellis.layers[i+1];
 
 		let& lastActive = activeNodes[i];
 		let& nextActive = activeNodes[i+1];
@@ -441,7 +603,6 @@ int main()
 		auto allSym = unionSorted(lastActive, nextActive);
 
 		let sd = smartDiff(lastActive, nextActive);
-		assert(sd.ret == DiffResult::NO || sd.add == DiffResult::NO);
 
 		auto makeCopy = [&](Vec const& of) -> std::vector<Vec> {
 			auto ret1 = Vec();
@@ -486,13 +647,14 @@ int main()
 					std::forward_as_tuple()
 				).first;
 
-				auto mem = (Vec const**)nullptr;
-				if (dig)
-					mem = &last_dir.second;
-				else
-					mem = &last_dir.first;
-				assert(*mem == nullptr);
-				*mem = &iter->first;
+				if (iter->second == nullptr)
+				{
+					iter->second = trellis.alloc();
+					iter->second->ve = &iter->first;
+				}
+
+				assert(last_dir->to[dig] == nullptr);
+				last_dir->to[dig] = iter->second;
 			};
 
 			auto sum = false;
@@ -508,11 +670,23 @@ int main()
 			}
 		}
 
-		//DBG printGraph();
 	}
 
+	DBG {
+		trellis.toGraphviz(cout);
+		cout << endl;
+	}
 	DBG printGraph();
 
+	auto encodeOriginal = [&](Vec u) {
+		auto ret = Vec(n);
+		for (let i : std::views::iota((size_t)0, n))
+		{
+			auto ve = G0T[i] * u;
+			ret[i] = std::reduce(ve.begin(), ve.end(), false, std::bit_xor<>{});
+		}
+		return ret;
+	};
 
 	//==== iterate commands
 	{
@@ -524,11 +698,12 @@ int main()
 			std::getline(cin, s);
 			if (s == "" || s == "\n")
 				continue;
+			DBG cout << "got line `" << s << "`" << endl;
 			auto handle = [&](std::string_view command, auto f) {
 				auto view = std::string_view(s);
 				if (view.substr(0, command.size()) != command)
 					return false;
-				auto ss = std::stringstream(s.substr(std::string("Encode ").size()));
+				auto ss = std::stringstream(s.substr(command.size()));
 				f(ss);
 				return true;
 			};
@@ -545,14 +720,13 @@ int main()
 						s >> b;
 						u[i] = b;
 					}
-					for (let i : std::views::iota((size_t)0, n))
-					{
-						auto ve = G0T[i] * u;
-						cout << std::reduce(ve.begin(), ve.end(), false, std::bit_xor<>{}) << ' ';
-					}
+					auto v = encodeOriginal(u);
+					for (let b : v)
+						cout << b << ' ';
 					cout << endl;
 				})
 				|| handle("Decode", [&](std::stringstream& s) {
+					DBG cout << "//decode " << s.str() << endl;
 					auto f = std::vector<float>();
 					for (let i : std::views::iota((size_t)0, n))
 					{
@@ -561,11 +735,23 @@ int main()
 						f.emplace_back(b);
 					}
 
-					for (auto& layer : trellis)
-					{
+					auto r = trellis.decode(f);
 
-					}
-					cout << "TODO: DECODE" << endl;
+					for (auto a : r)
+						cout << a << ' ';
+					cout << endl;
+				})
+				|| handle("Simulate ", [&](std::stringstream& s) {
+					DBG cout << "//simulate " << s.str() << endl;
+					float db;
+					s >> db;
+					let sigma = std::sqrt(0.5 * std::pow(10, -db / 10.0) * n / k);
+					//let sigma = 0.0;
+					//cout << "sigma: " << sigma << " (from " << db << ")" << endl;
+					size_t iters, maxErrs;
+					s >> iters >> maxErrs;
+					cout << simulate(n, k, trellis, sigma, iters, maxErrs, encodeOriginal);
+					cout << endl;
 				})
 				|| fail("unknown command");
 		}
