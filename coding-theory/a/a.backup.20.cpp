@@ -7,6 +7,7 @@
 #include <tuple>
 #include <utility>
 #include <vector>
+#include <ranges>
 #include <numeric>
 #include <cassert>
 #include <map>
@@ -19,6 +20,8 @@
 #include <random>
 
 #define let auto const
+
+#define IS_DBG defined(_DEBUG)
 
 #ifdef _DEBUG
 #define IS_DBG true
@@ -33,7 +36,6 @@ Decode -1.0 1.0 1 1 1 1 1 1.5
 Decode -10 1 1 1 1 1 1 1
 Simulate 3 100000 100
 Simulate 4 100000 100
-
 )delim");
 using std::cout;
 #else
@@ -48,7 +50,6 @@ auto cout = std::fstream("output.txt", std::ios_base::out);
 constexpr auto SHOW_DBG = IS_DBG;
 
 #define DBG if constexpr (SHOW_DBG)
-#define REM if constexpr (false)
 #define NOP
 
 struct endl_t {} endl;
@@ -59,355 +60,39 @@ std::ostream& operator<<(std::ostream& o, endl_t)
 	return o;
 }
 
-template<typename T>
-class RangeIota {
-public:
-	struct Iterator
-	{
-		T data;
-
-		T operator*() const noexcept
-		{
-			return data;
-		}
-
-		bool operator!=(Iterator const& r) const noexcept
-		{
-			return data != r.data;
-		}
-
-		Iterator operator++() noexcept
-		{
-			data++;
-			return *this;
-		}
-
-		Iterator operator++(int) noexcept
-		{
-			return Iterator{++data};
-		}
-	};
-	Iterator begin() const noexcept
-	{
-		return Iterator{0};
-	}
-
-	Iterator end() const noexcept
-	{
-		return Iterator{e};
-	}
-
-	RangeIota(T e) : e(std::move(e)) {}
-private:
-	const T e;
-};
-
-template<class T>
-RangeIota(T) -> RangeIota<T>;
-
 /* content */
 
-class Vec {
-private:
-	using T = std::uint32_t;
-	std::vector<T> data;
-	static constexpr size_t bits = 32;
-	size_t size_ = 0;
+class Vec : public std::vector<bool> {
 public:
-	Vec() = default;
-	Vec(size_t size) noexcept
-	: data((size + bits - 1) / bits, 0)
-	, size_(size)
-	{}
-
-	Vec(Vec const&) = default;
-	Vec(Vec&& r) noexcept
-	: data(std::move(r.data))
-	, size_(r.size_)
-	{
-		r.size_ = 0;
-	}
-
-	Vec& operator=(Vec const&) = default;
-	Vec& operator=(Vec&& r) noexcept
-	{
-		if (this == &r)
-			return *this;
-		data = std::move(r.data);
-		size_ = r.size_;
-		r.size_ = 0;
-		return *this;
-	}
-
-	size_t size() const noexcept { return size_; }
-	bool empty() const noexcept { return size() == 0; }
-
-	friend Vec operator+(Vec const& l, Vec const& r) noexcept;
-	friend Vec operator*(Vec const& l, Vec const& r) noexcept;
-
-	friend Vec& operator+=(Vec& l, Vec const& r) noexcept;
-	friend Vec& operator*=(Vec& l, Vec const& r) noexcept;
-
-	friend bool operator==(Vec const& l, Vec const& r) noexcept;
-	friend bool operator<(Vec const& l, Vec const& r) noexcept;
-
-	template<typename V>
-	struct Accessor {
-	private:
-		V* v;
-		size_t idx;
-		friend Vec;
-		Accessor(V* v, size_t idx)
-		: v(v)
-		, idx(idx)
-		{}
-	public:
-		operator bool() const noexcept
-		{
-			return (v->data[idx / bits] & (1 << (idx % bits))) != 0;
-		}
-
-		Accessor(Accessor const&) = delete;
-		Accessor& operator=(Accessor const&) = delete;
-
-		Accessor& operator=(bool a) noexcept
-		{
-			auto& byte = v->data[idx / bits];
-			auto bit = idx % bits;
-			byte = (byte & ~(1 << bit)) | (T(a) << bit);
-			return *this;
-		}
-	};
-
-	Accessor<Vec> operator[](size_t idx) noexcept
-	{
-		return Accessor<Vec>(this, idx);
-	}
-
-	Accessor<const Vec> operator[](size_t idx) const noexcept
-	{
-		return Accessor<const Vec>(this, idx);
-	}
-
-	Accessor<Vec> emplace_back(bool b) noexcept
-	{
-		let byte = (size_ + bits - 1) / bits;
-		if (byte >= data.size())
-			data.emplace_back(0);
-		size_++;
-		(*this)[size_-1] = b;
-		return (*this)[size_-1];
-	}
-
-	T rest() const noexcept
-	{
-		let lastByte = size_ / bits;
-		let counted = lastByte * bits;
-		if (counted >= size_)
-			return 0;
-		return data[lastByte] & ((1 << (size_ - counted)) - 1);
-	}
-
-	bool sum() const noexcept
-	{
-		auto sum = T(0);
-		let lastByte = size_ / bits;
-		for (let byte : RangeIota(lastByte))
-			sum ^= data[byte];
-		sum ^= rest();
-
-		auto ret = false;
-		for (let bit : RangeIota(bits))
-			ret ^= (sum & (1 << bit)) != 0;
-
-		DBG {
-			auto test = false;
-			for (let b : *this)
-				test ^= b;
-			assert(test == ret);
-		}
-
-		return ret;
-	}
-
-	template<typename V>
-	class Iterator
-	{
-	private:
-		V* v;
-		size_t idx;
-		friend Vec;
-		Iterator(V* v, size_t idx)
-		: v(v)
-		, idx(idx)
-		{}
-	public:
-		using iterator_category = std::random_access_iterator_tag;
-		using value_type = bool;
-		using difference_type = int;
-		using pointer = std::nullptr_t;
-		using reference = Accessor<V>;
-
-		Iterator() = default;
-		Iterator(Iterator const&) = default;
-		Iterator(Iterator&&) = default;
-
-		Iterator& operator=(Iterator const&) = default;
-		Iterator& operator=(Iterator&&) = default;
-
-		reference operator*() noexcept
-		{
-			return (*v)[idx];
-		}
-
-		Iterator operator++() noexcept
-		{
-			++idx;
-			return *this;
-		}
-
-		Iterator operator++(int) noexcept
-		{
-			auto old = *this;
-			++idx;
-			return old;
-		}
-
-		Iterator operator--() noexcept
-		{
-			--idx;
-			return *this;
-		}
-
-		Iterator operator--(int) noexcept
-		{
-			auto old = *this;
-			--idx;
-			return old;
-		}
-
-		Iterator operator+(int d) noexcept
-		{
-			return Iterator(v, idx + d);
-		}
-
-		Iterator& operator+=(int d) noexcept
-		{
-			idx += d;
-			return *this;
-		}
-
-		bool operator==(Iterator const& r) const noexcept
-		{
-			assert(v == r.v);
-			return idx == r.idx;
-		}
-
-		bool operator<(Iterator const& r) const noexcept
-		{
-			assert(v == r.v);
-			return idx <= r.idx;
-		}
-
-		bool operator!=(Iterator const& r) const noexcept
-		{
-			return !(*this == r);
-		}
-	};
-
-	Iterator<Vec> begin() noexcept
-	{
-		return Iterator<Vec>(this, 0);
-	}
-
-	Iterator<Vec> end() noexcept
-	{
-		return Iterator<Vec>(this, size_);
-	}
-
-	Iterator<const Vec> begin() const noexcept
-	{
-		return Iterator<const Vec>(this, 0);
-	}
-
-	Iterator<const Vec> end() const noexcept
-	{
-		return Iterator<const Vec>(this, size_);
-	}
+	using std::vector<bool>::vector;
 };
-
-void swap(Vec::Accessor<Vec> l, Vec::Accessor<Vec> r)
-{
-	bool d = r;
-	r = (bool)l;
-	l = d;
-}
 
 Vec operator+(Vec const& l, Vec const& r) noexcept
 {
-	assert(l.size() == r.size());
 	auto ret = Vec(l.size());
-	for (size_t i = 0; i < l.data.size(); i++)
-		ret.data[i] = l.data[i] ^ r.data[i];
+	for (size_t i = 0; i < l.size(); i++)
+		ret[i] = l[i] ^ r[i];
 	return ret;
 }
 
 Vec operator*(Vec const& l, Vec const& r) noexcept
 {
-	assert(l.size() == r.size());
 	auto ret = Vec(l.size());
-	for (size_t i = 0; i < l.data.size(); i++)
-		ret.data[i] = l.data[i] & r.data[i];
+	for (size_t i = 0; i < l.size(); i++)
+		ret[i] = l[i] & r[i];
 	return ret;
 }
 
 Vec& operator*=(Vec& l, Vec const& r) noexcept
 {
-	assert(l.size() == r.size());
-	auto ret = Vec(l.size());
-	for (size_t i = 0; i < l.data.size(); i++)
-		l.data[i] &= r.data[i];
+	l = l * r;
 	return l;
 }
 
 Vec& operator+=(Vec& l, Vec const& r) noexcept
 {
-	assert(l.size() == r.size());
-	auto ret = Vec(l.size());
-	for (size_t i = 0; i < l.data.size(); i++)
-		l.data[i] ^= r.data[i];
+	l = l + r;
 	return l;
-}
-
-bool operator==(Vec const& l, Vec const& r) noexcept
-{
-	if (l.size() != r.size())
-		return false;
-	let lastByte = l.size_ / Vec::bits;
-	for (let byte : RangeIota(lastByte))
-		if (l.data[byte] != r.data[byte])
-			return false;
-
-	if (l.rest() != r.rest())
-		return false;
-	return true;
-}
-
-bool operator!=(Vec const& l, Vec const& r) noexcept
-{
-	return !(l == r);
-}
-
-bool operator<(Vec const& l, Vec const& r) noexcept
-{
-	if (l.size() != r.size())
-		return l.size() < r.size();
-	let lastByte = l.size_ / Vec::bits;
-	for (let byte : RangeIota(lastByte))
-		if (l.data[byte] != r.data[byte])
-			return l.data[byte] < r.data[byte];
-
-	return l.rest() < r.rest();
 }
 
 using Mat = std::vector<Vec>;
@@ -424,19 +109,16 @@ void printMat(size_t n, Mat const& m)
 
 void toSpan(size_t n, Mat& m)
 {
-	if (m.empty())
-		return;
-	for (size_t col = 0, start = 0; start < m.size() && col < n; col++)
+	for (size_t s = 0; s < m.size(); s++)
 	{
-		let ini = std::numeric_limits<decltype(col)>::max();
+		let ini = std::numeric_limits<decltype(s)>::max();
 		auto fst = ini;
-		for (auto i = start; i < m.size(); i++)
-			if (m[i][col])
+		for (auto i = s; i != m.size(); i++)
+			if (m[i][s])
 				if (fst == ini)
 				{
-					std::swap(m[i], m[start]);
-					fst = start;
-					start++;
+					std::swap(m[i], m[s]);
+					fst = s;
 				}
 				else
 				{
@@ -449,7 +131,7 @@ void toSpan(size_t n, Mat& m)
 		active[s] = (int)(m.size()-1-s);
 
 	int col = n-1;
-	while (col >= 0 && active.size() > 1)
+	while (active.size() > 0)
 	{
 		for (size_t i = 0; i < active.size(); i++)
 			if (let& row = m[active[i]]; row[col])
@@ -461,7 +143,97 @@ void toSpan(size_t n, Mat& m)
 				break;
 			}
 		col--;
+		assert(col >= 0);
 	}
+}
+
+template<typename T>
+std::vector<T> intersectSorted(std::vector<T> const& l, std::vector<T> const& r)
+{
+	auto res = std::vector<T>();
+	size_t pl = 0;
+	size_t pr = 0;
+	while (pl < l.size() && pr < r.size())
+	{
+		if (l[pl] == r[pr])
+		{
+			res.emplace_back(l[pl]);
+			pl++;
+			pr++;
+		}
+		else if (l[pl] < r[pr])
+		{
+			pl++;
+		}
+		else
+		{
+			pr++;
+		}
+	}
+	return res;
+}
+
+template<typename T>
+std::vector<T> differenceSorted(std::vector<T> const& l, std::vector<T> const& r)
+{
+	auto res = std::vector<T>();
+	size_t pl = 0;
+	size_t pr = 0;
+	while (pl < l.size() && pr < r.size())
+	{
+		if (l[pl] == r[pr])
+		{
+			pl++;
+			pr++;
+		}
+		else if (l[pl] < r[pr])
+		{
+			res.emplace_back(l[pl]);
+			pl++;
+		}
+		else
+		{
+			res.emplace_back(r[pr]);
+			pr++;
+		}
+	}
+	return res;
+}
+
+template<typename T>
+std::vector<T> unionSorted(std::vector<T> const& l, std::vector<T> const& r)
+{
+	auto res = std::vector<T>();
+	size_t pl = 0;
+	size_t pr = 0;
+	while (pl < l.size() && pr < r.size())
+	{
+		if (l[pl] == r[pr])
+		{
+			pr++;
+		}
+		else if (l[pl] < r[pr])
+		{
+			res.emplace_back(l[pl]);
+			pl++;
+		}
+		else
+		{
+			res.emplace_back(r[pr]);
+			pr++;
+		}
+	}
+	while (pl < l.size())
+	{
+		res.emplace_back(l[pl]);
+		pl++;
+	}
+	while (pr < r.size())
+	{
+		res.emplace_back(r[pr]);
+		pr++;
+	}
+	return res;
 }
 
 struct DiffResult
@@ -518,23 +290,16 @@ DiffResult smartDiff(std::vector<size_t> const& l, std::vector<size_t> const& r)
 	return res;
 }
 
-struct TrellisNode;
+struct TrellisNode
+{
+	TrellisNode* to[2] = {};
+	Vec const* ve;
+};
 
 struct DecodingData
 {
-	static constexpr float MAX_DIST = std::numeric_limits<float>::max();
-
 	TrellisNode const* input = nullptr;
-	float distance = MAX_DIST;
-};
-
-struct TrellisNode
-{
-	std::array<TrellisNode*, 2> to = {};
-	DecodingData dec;
-
-
-	Vec const* ve;
+	float distance = std::numeric_limits<float>::max();
 };
 
 class Trellis
@@ -556,32 +321,29 @@ public:
 	Trellis& operator=(Trellis const&) = delete;
 
 	std::vector<std::map<Vec, TrellisNode*>> layers;
-	std::vector<std::vector<TrellisNode*>> fastLayers;
 	TrellisNode* start;
 
 	Vec decode(std::vector<float> const& w)
 	{
-		assert(layers.size() == fastLayers.size());
+		decoderData.clear();
+		decoderData.reserve(totalNodes);
 
-		for (auto& l : fastLayers)
-			for (auto& n : l)
-				n->dec.distance = DecodingData::MAX_DIST;
-
-		start->dec.distance = 0;
+		decoderData[start].distance = 0;
 
 		assert(layers.size() == w.size()+1);
 
-		for (let i : RangeIota(layers.size()))
+		for (let i : std::views::iota((size_t)0, layers.size()))
 		{
-			assert(layers[i].size() == fastLayers[i].size());
-			let& l = fastLayers[i];
-			for (let& from: l)
+			let& l = layers[i];
+			for (let& [_, from]: l)
 			{
-				auto doj = [&](TrellisNode* to, const float ew) {
+				auto& me = decoderData[from];
+
+				auto doj = [&](TrellisNode const* to, const float ew) {
 					if (to == nullptr)
 						return;
-					auto& d = to->dec;
-					let curDist = from->dec.distance + std::abs(w[i] - ew);
+					auto& d = decoderData[to];
+					let curDist = me.distance + std::abs(w[i] - ew);
 					//cout << curDist << " by " << me.distance << " ++ " << w[i] << " " << ew << endl;
 					if (d.distance > curDist)
 					{
@@ -599,7 +361,7 @@ public:
 		//cout << "dist: " << decoderData[backtrack].distance << endl;
 		while (true)
 		{
-			auto i = backtrack->dec.input;
+			auto i = decoderData[backtrack].input;
 			if (i == nullptr)
 				break;
 			if (i->to[0] == backtrack)
@@ -630,7 +392,7 @@ public:
 			lid++;
 			for (let& [k, n] : l)
 			{
-				for (let j : RangeIota(2))
+				for (let j : std::views::iota(0, 2))
 				{
 					let to = n->to[j];
 					if (to == nullptr)
@@ -649,28 +411,16 @@ public:
 		o << "}";
 	}
 
-	void OptimizeLayers() noexcept
-	{
-		fastLayers.reserve(layers.size());
-		for (let& l : layers)
-		{
-			auto& fl = fastLayers.emplace_back();
-			fl.reserve(l.size());
-			for (let& [_, node] : l)
-				fl.emplace_back(node);
-			std::sort(fl.begin(), fl.end());
-		}
-	}
-
 private:
-	constexpr static size_t POOL_SIZE = 64;
+	constexpr static size_t POOL_SIZE = 16;
 	std::forward_list<std::array<TrellisNode, POOL_SIZE>> pool = {{}};
 	size_t idxInPool = 0;
 	size_t totalNodes = 0;
+
+	std::unordered_map<TrellisNode const*, DecodingData> decoderData;
 };
 
-template<typename F>
-float simulate(size_t n, size_t k, Trellis& trellis, float sigma, size_t iters, size_t maxErrs, F encode)
+float simulate(size_t n, size_t k, Trellis& trellis, float sigma, size_t iters, size_t maxErrs, auto encode)
 {
 	auto rd = std::random_device();
 	auto gen = std::mt19937(rd());
@@ -686,10 +436,10 @@ float simulate(size_t n, size_t k, Trellis& trellis, float sigma, size_t iters, 
 
 	while (done < iters && errs < maxErrs)
 	{
-		for (let i : RangeIota(k))
+		for (let i : std::views::iota((size_t)0, k))
 			v0[i] = booleans(gen);
 		let v = encode(v0);
-		for (let i : RangeIota(n))
+		for (let i : std::views::iota((size_t)0, n))
 			vf[i] = 1 - v[i] * 2 + noiser(gen);
 
 		let decoded = trellis.decode(vf);
@@ -707,7 +457,6 @@ int main()
 #ifndef _DEBUG
 	std::ios_base::sync_with_stdio(false);
 	cin.tie(nullptr);
-	cout.tie(nullptr);
 #endif
 	size_t n, k;
 	cin >> n >> k;
@@ -715,8 +464,8 @@ int main()
 	auto G = Mat(k, Vec(n));
 
 	//==== read matrix
-	for (let i : RangeIota(k))
-		for (let j : RangeIota(n))
+	for (let i : std::views::iota((decltype(k))0, k))
+		for (let j : std::views::iota((decltype(n))0, n))
 		{
 			int a;
 			cin >> a;
@@ -739,9 +488,14 @@ int main()
 	}
 
 	auto G0T = Mat(n ,Vec(k));
-	for (let i : RangeIota(k))
-		for (let j : RangeIota(n))
-			G0T[j][i] = (bool)G0[i][j];
+	for (let i : std::views::iota((size_t)0, k))
+		for (let j : std::views::iota((size_t)0, n))
+			G0T[j][i] = G0[i][j];
+
+	auto GT = Mat(n ,Vec(k));
+	for (let i : std::views::iota((size_t)0, k))
+		for (let j : std::views::iota((size_t)0, n))
+			GT[j][i] = G[i][j];
 
 	//==== calc v_i
 	auto activeNodes = std::vector<std::vector<size_t>>(n+1);
@@ -753,7 +507,7 @@ int main()
 		for (size_t i = 0; i < k; i++)
 		{
 			let& row = G[i];
-			[[maybe_unused]] auto ok = false;
+			auto ok = false;
 			for (size_t j = 0; j < n; j++)
 				if (row[j])
 				{
@@ -761,8 +515,7 @@ int main()
 					ok = true;
 					break;
 				}
-			if (!ok)
-				firsts.emplace_back(n);
+			assert(ok);
 			ok = false;
 			for (size_t j = n; j > 0; j--)
 				if (row[j-1])
@@ -771,20 +524,15 @@ int main()
 					ok = true;
 					break;
 				}
-			if (!ok)
-				lasts.emplace_back(n);
+			assert(ok);
 		}
 
 		assert(firsts.size() == lasts.size());
 		for (size_t i = 0; i < firsts.size(); i++)
 			for (size_t j = i+1; j < firsts.size(); j++)
 			{
-				assert(
-					firsts[i] == lasts[i]
-					|| firsts[j] == lasts[j]
-					|| firsts[i] != firsts[j]
-						&& lasts[i] != lasts[j]
-				);
+				assert(firsts[i] != firsts[j]);
+				assert(lasts[i] != lasts[j]);
 			}
 
 		for (size_t i = 0; i < n; i++)
@@ -801,17 +549,18 @@ int main()
 		cout << endl;
 	}
 
-	//==== build trellis
+	//==== build lattice
+	auto pLayerId = [](std::ostream& o, Vec const& l) -> decltype(auto) {
+		for (let i : l)
+			o << i;
+		return o;
+	};
+
+
 	auto trellis = Trellis();
 	trellis.layers.resize(n+1);
 
-	[[maybe_unused]] auto printGraph = [&](){
-		auto pLayerId = [](std::ostream& o, Vec const& l) -> decltype(auto) {
-			for (let i : l)
-				o << i;
-			return o;
-		};
-
+	auto printGraph = [&](){
 		auto i = size_t(0);
 		for (let& layer : trellis.layers)
 		{
@@ -843,7 +592,7 @@ int main()
 		node->ve = &trellis.layers[0].emplace(Vec(), node).first->first;
 		trellis.start = node;
 	}
-	for (let i : RangeIota(n))
+	for (let i : std::views::iota(size_t(0), n))
 	{
 		auto& last = trellis.layers[i];
 		auto& next = trellis.layers[i+1];
@@ -851,10 +600,9 @@ int main()
 		let& lastActive = activeNodes[i];
 		let& nextActive = activeNodes[i+1];
 
-		//auto allSym = unionSorted(lastActive, nextActive);
+		auto allSym = unionSorted(lastActive, nextActive);
 
 		let sd = smartDiff(lastActive, nextActive);
-		assert(sd.add == DiffResult::NO || sd.ret != sd.add);
 
 		auto makeCopy = [&](Vec const& of) -> std::vector<Vec> {
 			auto ret1 = Vec();
@@ -891,8 +639,6 @@ int main()
 
 		for (auto& [last_vals, last_dir] : last)
 		{
-			// binding can't be captured :(
-			auto& last_dir_cap = last_dir;
 			auto added = makeCopy(last_vals);
 			auto ins = [&](Vec const& w, bool dig) {
 				auto iter = next.emplace(
@@ -907,8 +653,8 @@ int main()
 					iter->second->ve = &iter->first;
 				}
 
-				assert(last_dir_cap->to[dig] == nullptr);
-				last_dir_cap->to[dig] = iter->second;
+				assert(last_dir->to[dig] == nullptr);
+				last_dir->to[dig] = iter->second;
 			};
 
 			auto sum = false;
@@ -926,20 +672,18 @@ int main()
 
 	}
 
-	trellis.OptimizeLayers();
-
 	DBG {
 		trellis.toGraphviz(cout);
 		cout << endl;
 	}
-	REM printGraph();
+	DBG printGraph();
 
-	auto encodeOriginal = [&](Vec const& u) {
+	auto encodeOriginal = [&](Vec u) {
 		auto ret = Vec(n);
-		for (let i : RangeIota(n))
+		for (let i : std::views::iota((size_t)0, n))
 		{
 			auto ve = G0T[i] * u;
-			ret[i] = ve.sum();
+			ret[i] = std::reduce(ve.begin(), ve.end(), false, std::bit_xor<>{});
 		}
 		return ret;
 	};
@@ -970,7 +714,7 @@ int main()
 			false
 				|| handle("Encode", [&](std::stringstream& s) {
 					auto u = Vec(k);
-					for (let i : RangeIota(k))
+					for (let i : std::views::iota((size_t)0, k))
 					{
 						int b;
 						s >> b;
@@ -984,7 +728,7 @@ int main()
 				|| handle("Decode", [&](std::stringstream& s) {
 					DBG cout << "//decode " << s.str() << endl;
 					auto f = std::vector<float>();
-					for ([[maybe_unused]] let i : RangeIota(n))
+					for (let i : std::views::iota((size_t)0, n))
 					{
 						float b;
 						s >> b;
@@ -1002,6 +746,8 @@ int main()
 					float db;
 					s >> db;
 					let sigma = std::sqrt(0.5 * std::pow(10, -db / 10.0) * n / k);
+					//let sigma = 0.0;
+					//cout << "sigma: " << sigma << " (from " << db << ")" << endl;
 					size_t iters, maxErrs;
 					s >> iters >> maxErrs;
 					cout << simulate(n, k, trellis, sigma, iters, maxErrs, encodeOriginal);
