@@ -7,3 +7,4 @@ hie.yaml
 .gdb_history
 .vscode
 .ipynb_checkpoints
+.clangd
