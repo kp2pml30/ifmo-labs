@@ -520,6 +520,12 @@ DiffResult smartDiff(std::vector<size_t> const& l, std::vector<size_t> const& r)
 
 struct TrellisNode;
 
+template<typename T>
+T sqr(T const& a)
+{
+	return a * a;
+}
+
 struct DecodingData
 {
 	static constexpr float MAX_DIST = std::numeric_limits<float>::max();
@@ -581,7 +587,7 @@ public:
 					if (to == nullptr)
 						return;
 					auto& d = to->dec;
-					let curDist = from->dec.distance + std::abs(w[i] - ew);
+					let curDist = from->dec.distance + sqr(w[i] - ew);
 					//cout << curDist << " by " << me.distance << " ++ " << w[i] << " " << ew << endl;
 					if (d.distance > curDist)
 					{
@@ -618,6 +624,11 @@ public:
 		}
 
 		std::reverse(ret.begin(), ret.end());
+
+		DBG {
+			toGraphviz(cout);
+			cout << "\n";
+		}
 		return ret;
 	}
 
@@ -625,6 +636,23 @@ public:
 	{
 		o << "digraph Trellis {";
 		auto lid = size_t(0);
+		for (let& l : layers)
+		{
+			lid++;
+			for (let& [k, n] : l)
+			{
+				o << "v" << lid << "_";
+				for (let b : k)
+					o << b;
+				o << "[label=\"";
+				o << "v" << lid << "_";
+				for (let b : k)
+					o << b;
+				o << "/" << n->dec.distance;
+				o << "\"];";
+			}
+		}
+		lid = 0;
 		for (let& l : layers)
 		{
 			lid++;
@@ -642,7 +670,8 @@ public:
 					o << " -> v" << (lid+1) << "_";
 					for (let b : *to->ve)
 						o << b;
-					o << " [label=\"" << j << "\"];";
+					o << " [label=\"" << j;
+					o << "\"];";
 				}
 			}
 		}
