@@ -1,0 +1,219 @@
+!!!!!! Students
+
+-- есть по умолчанию
+-- ДЗ-5.1.1. Информацию о студентах. С заданным идентификатором
+--   (StudentId, StudentName, GroupId по :StudentId)
+-- ДЗ-5.2.1. Полную информацию о студентах. С заданным
+--   идентификатором (StudentId, StudentName, GroupName по
+--   :StudentId)
+-- ДЗ-6.1.3. Информацию о студентах. C заданной оценкой по
+--   дисциплине, заданной идентификатором (StudentId,
+--   StudentName, GroupId по :Mark, :CourseId)
+-- еще его можно было бы переделать в btree и сделать
+-- покрывающим для всяких 5.1.2
+create unique index StudentIdIdx on Students using hash (StudentId);
+
+-- ДЗ-5.1.2. Информацию о студентах. С заданным ФИО (StudentId,
+--   StudentName, GroupId по :StudentName)
+-- ДЗ-5.2.2. Полную информацию о студентах. С заданным ФИО
+--   (StudentId, StudentName, GroupName по :StudentName)
+-- ДЗ-5.6.1. Идентификаторы студентов по преподавателю. Имеющих
+--   хотя бы одну оценку у преподавателя (StudentId по
+--   :LecturerName)
+-- btree наверное лучше работает со строками благодаря
+--   префиксам?..
+-- индексы на строки спорные....
+-- хотя для обычных типов данных при проверке на = хэш лучше
+-- еще если в btree добавить StudentId можно сделать unique
+create index StudentNameIdx on Students using btree (StudentName);
+
+-- нет смысла сортировать GroupId, наверное (хотя если они
+--   изначально
+-- повторяют какую-то логику, что какой-то разряд это год,
+-- то, может быть, btree лучше для каких-то запросов
+-- ускоряет nj с планом, особенно отфильтрованным
+-- ДЗ-5.5.1. Для каждого студента ФИО и названия дисциплин.
+--   Которые у него есть по плану (StudentName, CourseName)
+-- ДЗ-5.5.2. Для каждого студента ФИО и названия дисциплин.
+--   Есть, но у него нет оценки (StudentName, CourseName)
+-- ДЗ-5.5.3. Для каждого студента ФИО и названия дисциплин.
+--   Есть, но у него не 4 или 5 (StudentName, CourseName)
+create index StudentGroupToId on Students using hash (GroupId);
+
+-- покрывающий для поиска студента по группе
+-- полезно когда хотим достать из плана
+-- или сгруппировать по группе
+-- ДЗ-5.8.3. Суммарный балл. Каждой группы (GroupName, SumMark)
+-- ДЗ-5.9.3. Средний балл. Каждой группы (GroupName, AvgMark)
+-- ДЗ-6.5.1. Идентификаторы студентов по преподавателю. Имеющих
+--   хотя бы одну оценку у преподавателя (StudentId по
+--   :LecturerName)
+create unique index StudentsGidToSid on Students using btree (GroupId, StudentId)
+
+-- ДЗ-7.2.2. Напишите запросы, обновляющие данные студентов.
+--   Перевод студента из группы в группу по индентификаторам
+--   (StudentId, GroupId, FromGroupId)
+create unique index StudentIdAndGroupToRecord on Students using hash (StudentId, GroupId)
+
+!!!!!! Groups
+
+-- должен быть по дефолту т.к. у групп Name -> Id
+-- если мы не должны делать unique констрейнт то
+-- можно было бы сделать покрывающим
+-- ДЗ-6.1.2. Информацию о студентах. Учащихся в заданной группе
+--   (StudentId, StudentName, GroupId по :GroupName)
+-- ДЗ-7.1.2. Напишите запросы, удаляющие студентов. Учащихся в
+--   группе, заданной названием (GroupName)
+-- ДЗ-7.2.4. Напишите запросы, обновляющие данные студентов.
+--   Перевод всех студентов из группы в группу по названиям
+--   (GroupName, FromGroupName)
+create unique index GroupNameToId on Groups using btree (GroupName);
+
+-- создается по умолчанию
+-- и ускоряет поиск имени группы по id
+-- (+ добавляет констрейнт)
+-- ДЗ-5.2.1. Полную информацию о студентах. С заданным
+--   идентификатором (StudentId, StudentName, GroupName по
+--   :StudentId)
+-- ДЗ-5.2.2. Полную информацию о студентах. С заданным ФИО
+--   (StudentId, StudentName, GroupName по :StudentName)
+-- ДЗ-5.7.2. Группы и дисциплины, такие что все студенты группы
+--   имеют оценку по этой дисциплине. Названия (GroupName,
+--   CourseName)
+create unique index GroupId on Groups using hash (GroupId);
+
+
+!!!!!! Courses
+
+-- ДЗ-5.3.2. Информацию о студентах с заданной оценкой по
+--   дисциплине. С заданным названием (StudentId, StudentName,
+--   GroupId по :Mark, :CourseName)
+-- ДЗ-5.4.1. Информацию о студентах не имеющих оценки по
+--   дисциплине. Среди всех студентов (StudentId, StudentName,
+--   GroupId по :CourseName)
+-- ДЗ-5.4.2. Информацию о студентах не имеющих оценки по
+--   дисциплине. Среди студентов, у которых есть эта дисциплина
+--   (StudentId, StudentName, GroupId по :CourseName)
+create unique index CourseNameToId on Courses using btree (CourseName, CourseId);
+
+-- создается автоматически
+-- ДЗ-5.5.1. Для каждого студента ФИО и названия дисциплин.
+--   Которые у него есть по плану (StudentName, CourseName)
+-- ДЗ-5.5.2. Для каждого студента ФИО и названия дисциплин.
+--   Есть, но у него нет оценки (StudentName, CourseName)
+-- ДЗ-5.5.3. Для каждого студента ФИО и названия дисциплин.
+--   Есть, но у него не 4 или 5 (StudentName, CourseName)
+create unique index CoursesIdUniq on Courses using hash (CourseId);
+
+!!!!!! Lecturers
+
+-- создается по умолчанию
+-- не было запросов требующих LecturerName => вообще говоря не
+--   нужен
+-- только для unique(PK)
+create unique index LecturerIdUniq on Lecturers using hash (LecturerId);
+
+-- ДЗ-5.3.4. Информацию о студентах с заданной оценкой по
+--   дисциплине. Которую у него вёл лектор, заданный ФИО
+--   (StudentId, StudentName, GroupId по :Mark, :LecturerName)
+-- ДЗ-5.3.6. Информацию о студентах с заданной оценкой по
+--   дисциплине. Которую вёл лектор, заданный ФИО (StudentId,
+--   StudentName, GroupId по :Mark, :LecturerName)
+-- ДЗ-5.6.1. Идентификаторы студентов по преподавателю. Имеющих
+--   хотя бы одну оценку у преподавателя (StudentId по
+--   :LecturerName)
+create unique index LecturerNameToId on Lecturers using btree (LecturerName, LecturerId);
+
+!!!!!! Plan
+
+-- ДЗ-5.3.3. Информацию о студентах с заданной оценкой по
+--   дисциплине. Которую у него вёл лектор заданный
+--   идентификатором (StudentId, StudentName, GroupId по :Mark,
+--   :LecturerId)
+-- ДЗ-5.3.5. Информацию о студентах с заданной оценкой по
+--   дисциплине. Которую вёл лектор, заданный идентификатором
+--   (StudentId, StudentName, GroupId по :Mark, :LecturerId)
+-- ДЗ-5.3.6. Информацию о студентах с заданной оценкой по
+--   дисциплине. Которую вёл лектор, заданный ФИО (StudentId,
+--   StudentName, GroupId по :Mark, :LecturerName)
+create index LecturerIdToPlan on Plan using hash (LecturerId);
+
+-- по идее unique но в тестах было не так
+-- нужен для проверки существования (корел.)
+-- ДЗ-6.3.2. Студенты и дисциплины, такие что у студента была
+--   дисциплина (по плану или есть оценка). Имя и название
+--   (StudentName, CourseName)
+-- ДЗ-6.4.1. Студенты и дисциплины, такие что дисциплина есть в
+--   его плане, и у студента долг по этой дисциплине. Долгом
+--   считается отсутствие оценки (StudentName, CourseName)
+-- ДЗ-6.4.2. Студенты и дисциплины, такие что дисциплина есть в
+--   его плане, и у студента долг по этой дисциплине. Долгом
+--   считается оценка не выше 2 (StudentName, CourseName)
+create index GiCiExistsInPlan on Plan using hash (GroupId, CourseId);
+
+
+-- такой же по GroupId кажется не очень нужным,
+--  он бы использовался в nj со Students, но кажется
+--  лучше вычислять сначала в плане а потом вставлять студентов
+--  с группой, потому что их больше
+--  либо все равно full table scan
+--  но любой hash можно переделать в btree
+--  и добавить поле чтобы не лезь в таблицу
+-- ДЗ-5.4.2. Информацию о студентах не имеющих оценки по
+--   дисциплине. Среди студентов, у которых есть эта дисциплина
+--   (StudentId, StudentName, GroupId по :CourseName)
+-- ДЗ-6.2.4. Полную информацию о студентах. Студентов, не
+--   имеющих оценки по дисциплине, у которых есть эта дисциплина
+--   (StudentId, StudentName, GroupName по :CourseId)
+-- ДЗ-6.2.5. Полную информацию о студентах. Студентов, не
+--   имеющих оценки по дисциплине, у которых есть эта дисциплина
+--   (StudentId, StudentName, GroupName по :CourseName)
+create index CourseIdToPlan on Plan using hash (CourseId);
+
+!!!!!! Marks
+
+-- ДЗ-5.3.1. Информацию о студентах с заданной оценкой по
+--   дисциплине. С заданным идентификатором (StudentId,
+--   StudentName, GroupId по :Mark, :CourseId)
+-- ДЗ-6.1.3. Информацию о студентах. C заданной оценкой по
+--   дисциплине, заданной идентификатором (StudentId,
+--   StudentName, GroupId по :Mark, :CourseId)
+-- ДЗ-6.1.4. Информацию о студентах. C заданной оценкой по
+--   дисциплине, заданной названием (StudentId, StudentName,
+--   GroupId по :Mark, :CourseName)
+-- hash потому что нет смысла искать по курсам, а оценок мало
+--   (5)
+create index MarkCourseToStudent on Marks using hash (CourseId, Mark);
+
+-- проверка того что у студента есть
+-- какая-то оценка (или их количество)
+-- ДЗ-7.1.3. Напишите запросы, удаляющие студентов. Без оценок
+-- ДЗ-7.1.4. Напишите запросы, удаляющие студентов. Имеющих 3 и
+--   более оценки
+-- ДЗ-7.1.5. Напишите запросы, удаляющие студентов. Имеющих 3 и
+--   менее оценки
+create index MarkByStudentIdExists on Marks using hash (StudentId);
+
+-- unique, но в тестах не так
+-- проверяет наличие оценок при изветном StudentId, CourseId
+-- полезен для проверки существования
+-- ДЗ-6.4.1. Студенты и дисциплины, такие что дисциплина есть в
+--   его плане, и у студента долг по этой дисциплине. Долгом
+--   считается отсутствие оценки (StudentName, CourseName)
+-- ДЗ-6.4.2. Студенты и дисциплины, такие что дисциплина есть в
+--   его плане, и у студента долг по этой дисциплине. Долгом
+--   считается оценка не выше 2 (StudentName, CourseName)
+-- ДЗ-6.4.3. Студенты и дисциплины, такие что дисциплина есть в
+--   его плане, и у студента долг по этой дисциплине. Долгом
+--   считается отсутствие оценки или оценка не выше 2
+--   (StudentName, CourseName)
+create index SiCiInMarks on Marks using btree (StudentId, CourseId, Mark)
+
+-- подмножество того что выше
+-- ДЗ-5.8.1. Суммарный балл. Одного студента (SumMark по
+--   :StudentId)
+-- ДЗ-5.9.1. Средний балл. Одного студента (AvgMark по
+--   :StudentId)
+-- ДЗ-5.8.2. Суммарный балл. Каждого студента (StudentName,
+--   SumMark)
+create index SiAndMark on Marks using btree (StudentId, Mark)

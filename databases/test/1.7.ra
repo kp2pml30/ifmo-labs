@@ -1,0 +1,1 @@
+π{SessionId}(Sessions) ∖ π{SessionId}(σ{Accepted = null}(Sessions ⋈ Problems ⟕ Runs))

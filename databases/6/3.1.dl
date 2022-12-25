@@ -1,0 +1,2 @@
+sel(StudentId, CourseId) :- Students(StudentId, _, GroupId), Plan(GroupId, CourseId, _).
+sel(StudentId, CourseId) :- Marks(StudentId, CourseId, _).

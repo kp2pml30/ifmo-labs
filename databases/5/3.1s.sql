@@ -1,0 +1,1 @@
+select StudentId, StudentName, GroupId from Marks natural join Students where CourseId = :CourseId and Mark = :Mark;

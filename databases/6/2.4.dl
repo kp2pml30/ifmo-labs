@@ -1,0 +1,9 @@
+hasMark(StudentId) :-
+	Marks(StudentId, :CourseId, _).
+hasDiscipline(GroupId) :-
+	Plan(GroupId, :CourseId, _).
+sel(StudentId, StudentName, GroupName) :-
+	Students(StudentId, StudentName, GroupId),
+	Groups(GroupId, GroupName),
+	hasDiscipline(GroupId),
+	not hasMark(StudentId).

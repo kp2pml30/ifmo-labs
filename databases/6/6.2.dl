@@ -1,0 +1,9 @@
+hasMark(StudentId, CourseId) :- Marks(StudentId, CourseId, _).
+hasBadStudent(GroupId, CourseId) :-
+	Students(StudentId, _, GroupId),
+	Courses(CourseId, _),
+	not hasMark(StudentId, CourseId).
+sel(GroupName, CourseName) :-
+	Groups(GroupId, GroupName),
+	Courses(CourseId, CourseName),
+	not hasBadStudent(GroupId, CourseId).

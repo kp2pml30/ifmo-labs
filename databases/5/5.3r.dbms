@@ -1,0 +1,1 @@
+π{StudentName, CourseName}(σ{Mark ≠ 4 && Mark ≠ 5}(Students ⋈ Plan ⋈ Courses ⟕ Marks))

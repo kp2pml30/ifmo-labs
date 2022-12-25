@@ -1,0 +1,43 @@
+-- находит курсы по которым нет людей с хорошими оценками
+-- полезно для нахождения злых преподавателей
+select CourseName
+from Courses
+where
+	CourseId not in (
+		select Marks.CourseId
+		from Marks
+		where
+			Marks.Mark > 3
+	)
+
+-- нужно ли дропать индексы из задания 1 и 2?..
+create index MarkToCourseId on Marks using btree (Mark, CourseId);
+
+-- уже был
+create index CourseIdIsPK on Courses using hash (CourseId);
+
+-- находит группы кт 4 курс
+select GroupId
+from Groups
+where
+	GroupName like 'M343%'
+
+-- таблица не использутеся
+drop index MarkToCourseId;
+
+-- таблица не использутеся
+drop index CourseIdIsPK;
+
+create unique index GroupAndId on Groups using btree (GroupName, GroupId);
+
+-- находит предметы по которым у студента хорошая оценка
+select CourseId
+from Marks
+where
+	StudentId = :StudentId
+	and Mark >= 4
+
+-- таблица не использутеся
+drop index GroupAndId;
+
+create index SiMInMarks on Marks using btree (StudentId, Mark, CourseId)

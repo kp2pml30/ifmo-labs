@@ -1,0 +1,10 @@
+good(StudentId, CourseId) :-
+	Students(StudentId, _, GroupId),
+	Plan(GroupId, CourseId, LecturerId),
+	Lecturers(LecturerId, :LecturerName).
+bad(StudentId) :-
+	good(StudentId, CourseId),
+	Marks(StudentId, CourseId, _).
+sel2(StudentId) :-
+	Students(StudentId, _, _),
+	not bad(StudentId).

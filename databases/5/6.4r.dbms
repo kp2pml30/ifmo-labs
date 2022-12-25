@@ -1,0 +1,1 @@
+π{StudentId}(π{StudentId, CourseId}(Marks) ⋇ π{GroupId, CourseId}(σ{LecturerName = :LecturerName}(Plan ⋈ Lecturers)) ⋂ π{StudentId, GroupId}(Students))

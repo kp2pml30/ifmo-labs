@@ -1,0 +1,5 @@
+sel2(StudentId) :-
+	Marks(StudentId, CourseId, _),
+	Plan(GroupId, CourseId, LecturerId),
+	Students(StudentId, _, GroupId),
+	Lecturers(LecturerId, :LecturerName).

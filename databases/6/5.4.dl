@@ -1,0 +1,11 @@
+lecturerSubjects(GroupId, CourseId) :-
+	Lecturers(LecturerId, :LecturerName),
+	Plan(GroupId, CourseId, LecturerId).
+hasMark(StudentId, CourseId) :- Marks(StudentId, CourseId, _).
+bad(StudentId) :-
+	Students(StudentId, _, GroupId),
+	lecturerSubjects(GroupId, CourseId),
+	not hasMark(StudentId, CourseId).
+sel(StudentId) :-
+	Students(StudentId, _, _),
+	not bad(StudentId).

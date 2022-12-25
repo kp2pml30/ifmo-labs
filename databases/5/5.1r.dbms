@@ -1,0 +1,1 @@
+π{StudentName, CourseName}(Students ⋈ Plan ⋈ Courses)

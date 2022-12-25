@@ -1,0 +1,19 @@
+select avg(cast(Mark as float))
+from Students natural join Marks
+where
+  GroupId = :GroupId
+  and CourseId = :CourseId
+
+-- сначала можно отфильтровать интересный курс
+-- потом студента
+-- и не нужно загружать запись
+-- т.к. покрывающий
+-- уникальность должна проверяться и другим
+-- индексом (т.к. SId, CId ключ)
+-- но с ней поиск быстрее -- не нужно смотреть в детей
+create unique index SIdCIdToMark on Marks using btree (CourseId, StudentId, Mark);
+
+-- сначала фильтруем по GoupId
+-- потом не смотря в таблицу берем студента
+-- уникальный как надмножество StudentId
+create unique index GroupIdToStudentId on Students using btree (GroupId, StudentId);

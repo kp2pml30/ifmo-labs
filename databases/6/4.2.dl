@@ -1,0 +1,10 @@
+hasMark(StudentId, CourseId) :- Marks(StudentId, CourseId, _).
+hasCourse(StudentId, CourseId) :- Students(StudentId, _, GroupId), Plan(GroupId, CourseId, _).
+badMark(StudentId, CourseId) :-
+	Marks(StudentId, CourseId, Mark),
+	Mark <= 2.
+sel(StudentName, CourseName) :-
+	Students(StudentId, StudentName, _),
+	Courses(CourseId, CourseName),
+	hasCourse(StudentId, CourseId),
+	badMark(StudentId, CourseId).

@@ -1,0 +1,6 @@
+help(ContestId, Letter) :-
+	Sessions(SessionId, _, ContestId, _),
+	Runs(_, SessionId, Letter, _, 1).
+sel(ContestId, Letter) :-
+	Problems(ContestId, Letter, _),
+	not help(ContestId, Letter).
