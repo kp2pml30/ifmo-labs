@@ -1,63 +1,63 @@
-1.     Запросы из предыдущих ДЗ
+1.     Р—Р°РїСЂРѕСЃС‹ РёР· РїСЂРµРґС‹РґСѓС‰РёС… Р”Р—
 
 1.S. Students
 
-Хэш-индекс на префикс упорядоченного индекса: create index StudentGroupToId on Students using hash (GroupId); create unique index StudentsGidToSid on Students using btree (GroupId, StudentId);
-Хэш-индекс на префикс упорядоченного индекса: create unique index StudentIdAndGroupToRecord on Students using hash (StudentId, GroupId); create unique index StudentsGidToSid on Students using btree (GroupId, StudentId);
-Неэффективный или бесполезный индекс: create unique index StudentIdAndGroupToRecord on Students using hash (StudentId, GroupId);
-Индекс мало/бесполезен: ДЗ-5.6.1 для create index StudentNameIdx on Students using btree (StudentName);
-Индекс мало/бесполезен: ДЗ-5.5.1 для create index StudentGroupToId on Students using hash (GroupId);
-Индекс мало/бесполезен: ДЗ-5.5.2 для create index StudentGroupToId on Students using hash (GroupId);
-Индекс мало/бесполезен: ДЗ-5.5.3 для create index StudentGroupToId on Students using hash (GroupId);
-Индекс мало/бесполезен: ДЗ-6.5.1 для create unique index StudentsGidToSid on Students using btree (GroupId, StudentId);
+РҐСЌС€-РёРЅРґРµРєСЃ РЅР° РїСЂРµС„РёРєСЃ СѓРїРѕСЂСЏРґРѕС‡РµРЅРЅРѕРіРѕ РёРЅРґРµРєСЃР°: create index StudentGroupToId on Students using hash (GroupId); create unique index StudentsGidToSid on Students using btree (GroupId, StudentId);
+РҐСЌС€-РёРЅРґРµРєСЃ РЅР° РїСЂРµС„РёРєСЃ СѓРїРѕСЂСЏРґРѕС‡РµРЅРЅРѕРіРѕ РёРЅРґРµРєСЃР°: create unique index StudentIdAndGroupToRecord on Students using hash (StudentId, GroupId); create unique index StudentsGidToSid on Students using btree (GroupId, StudentId);
+РќРµСЌС„С„РµРєС‚РёРІРЅС‹Р№ РёР»Рё Р±РµСЃРїРѕР»РµР·РЅС‹Р№ РёРЅРґРµРєСЃ: create unique index StudentIdAndGroupToRecord on Students using hash (StudentId, GroupId);
+РРЅРґРµРєСЃ РјР°Р»Рѕ/Р±РµСЃРїРѕР»РµР·РµРЅ: Р”Р—-5.6.1 РґР»СЏ create index StudentNameIdx on Students using btree (StudentName);
+РРЅРґРµРєСЃ РјР°Р»Рѕ/Р±РµСЃРїРѕР»РµР·РµРЅ: Р”Р—-5.5.1 РґР»СЏ create index StudentGroupToId on Students using hash (GroupId);
+РРЅРґРµРєСЃ РјР°Р»Рѕ/Р±РµСЃРїРѕР»РµР·РµРЅ: Р”Р—-5.5.2 РґР»СЏ create index StudentGroupToId on Students using hash (GroupId);
+РРЅРґРµРєСЃ РјР°Р»Рѕ/Р±РµСЃРїРѕР»РµР·РµРЅ: Р”Р—-5.5.3 РґР»СЏ create index StudentGroupToId on Students using hash (GroupId);
+РРЅРґРµРєСЃ РјР°Р»Рѕ/Р±РµСЃРїРѕР»РµР·РµРЅ: Р”Р—-6.5.1 РґР»СЏ create unique index StudentsGidToSid on Students using btree (GroupId, StudentId);
 
 1.G. Groups
 
 1.C. Courses
 
-Индекс мало/бесполезен: ДЗ-5.5.1 для create unique index CoursesIdUniq on Courses using hash (CourseId);
-Индекс мало/бесполезен: ДЗ-5.5.2 для create unique index CoursesIdUniq on Courses using hash (CourseId);
-Индекс мало/бесполезен: ДЗ-5.5.3 для create unique index CoursesIdUniq on Courses using hash (CourseId);
+РРЅРґРµРєСЃ РјР°Р»Рѕ/Р±РµСЃРїРѕР»РµР·РµРЅ: Р”Р—-5.5.1 РґР»СЏ create unique index CoursesIdUniq on Courses using hash (CourseId);
+РРЅРґРµРєСЃ РјР°Р»Рѕ/Р±РµСЃРїРѕР»РµР·РµРЅ: Р”Р—-5.5.2 РґР»СЏ create unique index CoursesIdUniq on Courses using hash (CourseId);
+РРЅРґРµРєСЃ РјР°Р»Рѕ/Р±РµСЃРїРѕР»РµР·РµРЅ: Р”Р—-5.5.3 РґР»СЏ create unique index CoursesIdUniq on Courses using hash (CourseId);
 
 1.L. Lecturers
 
 1.P. Plan
 
-Не unique индекс (а должен): create index GiCiExistsInPlan on Plan using hash (GroupId, CourseId);
-Индекс мало/бесполезен: ДЗ-6.3.2 для create index GiCiExistsInPlan on Plan using hash (GroupId, CourseId);
-Индекс мало/бесполезен: ДЗ-6.4.1 для create index GiCiExistsInPlan on Plan using hash (GroupId, CourseId);
-Индекс мало/бесполезен: ДЗ-6.4.2 для create index GiCiExistsInPlan on Plan using hash (GroupId, CourseId);
+РќРµ unique РёРЅРґРµРєСЃ (Р° РґРѕР»Р¶РµРЅ): create index GiCiExistsInPlan on Plan using hash (GroupId, CourseId);
+РРЅРґРµРєСЃ РјР°Р»Рѕ/Р±РµСЃРїРѕР»РµР·РµРЅ: Р”Р—-6.3.2 РґР»СЏ create index GiCiExistsInPlan on Plan using hash (GroupId, CourseId);
+РРЅРґРµРєСЃ РјР°Р»Рѕ/Р±РµСЃРїРѕР»РµР·РµРЅ: Р”Р—-6.4.1 РґР»СЏ create index GiCiExistsInPlan on Plan using hash (GroupId, CourseId);
+РРЅРґРµРєСЃ РјР°Р»Рѕ/Р±РµСЃРїРѕР»РµР·РµРЅ: Р”Р—-6.4.2 РґР»СЏ create index GiCiExistsInPlan on Plan using hash (GroupId, CourseId);
 
 1.M. Marks
 
-Хэш-индекс на префикс упорядоченного индекса: create index MarkByStudentIdExists on Marks using hash (StudentId); create index SiCiInMarks on Marks using btree (StudentId, CourseId, Mark);
-Хэш-индекс на префикс упорядоченного индекса: create index MarkByStudentIdExists on Marks using hash (StudentId); create index SiAndMark on Marks using btree (StudentId, Mark);
-Не unique индекс (а должен): create index SiCiInMarks on Marks using btree (StudentId, CourseId, Mark);
-Нет индекса на PK: create unique index on Marks using hash (StudentId, CourseId);
-Ожидался покрывающий индекс вместо: create index MarkCourseToStudent on Marks using hash (CourseId, Mark);
-Индекс мало/бесполезен: ДЗ-5.3.1 для create index MarkCourseToStudent on Marks using hash (CourseId, Mark);
+РҐСЌС€-РёРЅРґРµРєСЃ РЅР° РїСЂРµС„РёРєСЃ СѓРїРѕСЂСЏРґРѕС‡РµРЅРЅРѕРіРѕ РёРЅРґРµРєСЃР°: create index MarkByStudentIdExists on Marks using hash (StudentId); create index SiCiInMarks on Marks using btree (StudentId, CourseId, Mark);
+РҐСЌС€-РёРЅРґРµРєСЃ РЅР° РїСЂРµС„РёРєСЃ СѓРїРѕСЂСЏРґРѕС‡РµРЅРЅРѕРіРѕ РёРЅРґРµРєСЃР°: create index MarkByStudentIdExists on Marks using hash (StudentId); create index SiAndMark on Marks using btree (StudentId, Mark);
+РќРµ unique РёРЅРґРµРєСЃ (Р° РґРѕР»Р¶РµРЅ): create index SiCiInMarks on Marks using btree (StudentId, CourseId, Mark);
+РќРµС‚ РёРЅРґРµРєСЃР° РЅР° PK: create unique index on Marks using hash (StudentId, CourseId);
+РћР¶РёРґР°Р»СЃСЏ РїРѕРєСЂС‹РІР°СЋС‰РёР№ РёРЅРґРµРєСЃ РІРјРµСЃС‚Рѕ: create index MarkCourseToStudent on Marks using hash (CourseId, Mark);
+РРЅРґРµРєСЃ РјР°Р»Рѕ/Р±РµСЃРїРѕР»РµР·РµРЅ: Р”Р—-5.3.1 РґР»СЏ create index MarkCourseToStudent on Marks using hash (CourseId, Mark);
 
-2.     Средний балл
+2.     РЎСЂРµРґРЅРёР№ Р±Р°Р»Р»
 
-2.Q. Запрос
+2.Q. Р—Р°РїСЂРѕСЃ
 
-2.I. Индексы
+2.I. РРЅРґРµРєСЃС‹
 
-Не хватает индекса: create index on Groups using hash (GroupName);
-Не хватает индекса: create index on Courses using btree (CourseName, CourseId);
+РќРµ С…РІР°С‚Р°РµС‚ РёРЅРґРµРєСЃР°: create index on Groups using hash (GroupName);
+РќРµ С…РІР°С‚Р°РµС‚ РёРЅРґРµРєСЃР°: create index on Courses using btree (CourseName, CourseId);
 
-3.     Новые запросы
+3.     РќРѕРІС‹Рµ Р·Р°РїСЂРѕСЃС‹
 
-3.1.Q. Запрос
+3.1.Q. Р—Р°РїСЂРѕСЃ
 
-3.1.I. Индексы
+3.1.I. РРЅРґРµРєСЃС‹
 
-Полезность индекса не очевидна
+РџРѕР»РµР·РЅРѕСЃС‚СЊ РёРЅРґРµРєСЃР° РЅРµ РѕС‡РµРІРёРґРЅР°
 
-3.2.Q. Запрос
+3.2.Q. Р—Р°РїСЂРѕСЃ
 
-3.2.I. Индексы
+3.2.I. РРЅРґРµРєСЃС‹
 
-3.3.Q. Запрос
+3.3.Q. Р—Р°РїСЂРѕСЃ
 
-3.3.I. Индексы
+3.3.I. РРЅРґРµРєСЃС‹
