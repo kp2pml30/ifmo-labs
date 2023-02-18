@@ -1,0 +1,29 @@
+{
+  "name": "hw2",
+  "version": "1.0.0",
+  "description": "software design hw 2",
+  "type": "commonjs",
+  "scripts": {
+    "start": "npm run build:live",
+    "build": "tsc -p .",
+    "build:live": "nodemon --watch 'src/**/*.ts' --exec \"ts-node\" src/index.ts",
+    "test": "jest"
+  },
+  "author": "kp2pml30",
+  "license": "GPL-3.0",
+  "devDependencies": {
+    "@types/node": "^18.7.20",
+    "@types/node-fetch": "^2.6.2",
+    "nodemon": "^2.0.20",
+    "ts-jest": "^29.0.2",
+    "typescript": "^4.8.3"
+  },
+  "dependencies": {
+    "@types/fetch-mock": "^7.3.5",
+    "fetch-mock": "^9.11.0",
+    "fetch-mock-jest": "^1.5.1",
+    "node-fetch": "^2.6.1",
+    "sqlite3": "^5.1.4",
+    "ts-node": "^10.9.1"
+  }
+}

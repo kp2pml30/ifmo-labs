@@ -1,0 +1,40 @@
+> manager stat 1
+manager stat 1
+Error: unknown user 1
+    at Session.userStat (/home/kapuralu/ifmo/ifmo-labs/software-design/event-sourcing/src/index.ts:77:10)
+    at /home/kapuralu/ifmo/ifmo-labs/software-design/event-sourcing/src/index.ts:172:26
+    at Generator.next (<anonymous>)
+    at fulfilled (/home/kapuralu/ifmo/ifmo-labs/software-design/event-sourcing/src/index.ts:28:58)
+    at processTicksAndRejections (node:internal/process/task_queues:96:5)
+> pass tryenter 1
+pass tryenter 1
+false
+> manager new 1
+manager new 1
+> manager new 1
+manager new 1
+Error: duplciate user 1
+    at Session.createUser (/home/kapuralu/ifmo/ifmo-labs/software-design/event-sourcing/src/index.ts:35:10)
+    at /home/kapuralu/ifmo/ifmo-labs/software-design/event-sourcing/src/index.ts:150:14
+    at Generator.next (<anonymous>)
+    at fulfilled (/home/kapuralu/ifmo/ifmo-labs/software-design/event-sourcing/src/index.ts:28:58)
+    at processTicksAndRejections (node:internal/process/task_queues:96:5)
+> stats
+stats
+{"user_id":1,"lastUpdate":2,"visits":[0,0,0,0,0,0,0]} // applied #0 events
+> pass tryenter 1
+pass tryenter 1
+false
+> manager extend 1 2024-10-28
+manager extend 1 2024-10-28
+> pass tryenter 1
+pass tryenter 1
+true
+> pass exit 1
+pass exit 1
+> stats
+stats
+{"user_id":1,"to":"2024-10-28T00:00:00.000Z","lastUpdate":5,"visits":[0,0,0,0,0,1,0]} // applied #2 events
+> stats
+stats
+{"user_id":1,"to":"2024-10-28T00:00:00.000Z","lastUpdate":5,"visits":[0,0,0,0,0,1,0]} // applied #0 events
