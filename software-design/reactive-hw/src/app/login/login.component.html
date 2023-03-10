@@ -1,0 +1,25 @@
+<div *ngIf="accountData === undefined">
+
+<form [formGroup]="loginForm" (ngSubmit)="makeLogin()">
+<div>
+	<label>login</label>
+	<input type="text" formControlName="login" />
+</div>
+<button>proceed</button>
+</form>
+</div>
+
+<div>
+counter {{counter}}
+<button (click)="counter = counter + 1">inc</button>
+</div>
+
+<div *ngIf="accountData !== undefined">
+	<label>logged in as </label>{{accountData.login}}
+	<label>currency</label>
+	<select (change)="changeCurrency($event)">
+		<option *ngFor="let currKV of currencies" [value]="currKV.id">
+			{{ currKV.sign }}
+		</option>
+	</select>
+</div>
