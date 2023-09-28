@@ -22,8 +22,6 @@
     "@types/fetch-mock": "^7.3.5",
     "fetch-mock": "^9.11.0",
     "fetch-mock-jest": "^1.5.1",
-    "node-fetch": "^2.6.1",
-    "sqlite3": "^5.1.4",
     "ts-node": "^10.9.1"
   }
 }

@@ -8,3 +8,6 @@ hie.yaml
 .vscode
 .ipynb_checkpoints
 .clangd
+zig-out
+zig-cache
+node_modules

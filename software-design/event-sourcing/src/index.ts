@@ -22,7 +22,7 @@ manager extend <id> <date>
 pass tryenter <id>
 pass exit <id>
 
-stat
+stats
 `)
 	};
 

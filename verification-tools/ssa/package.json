@@ -1,0 +1,19 @@
+{
+  "name": "ssa",
+  "version": "1.0.0",
+  "description": "homework for transforming ts subset into ssa",
+  "main": "index.ts",
+  "scripts": {
+    "start": "npm run build:live",
+    "build": "tsc -p .",
+    "build:live": "nodemon --watch 'src/**/*.ts' --exec \"ts-node\" src/index.ts tests/while.ts /tmp/test",
+    "test": "jest"
+  },
+  "author": "kp2pml30",
+  "license": "GPL-3.0-or-later",
+  "devDependencies": {
+    "nodemon": "^3.0.1",
+    "ts-node": "^10.9.1",
+    "typescript": "^5.2.2"
+  }
+}
