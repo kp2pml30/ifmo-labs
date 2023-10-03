@@ -51,8 +51,9 @@ export class BBlock {
         return r
     }
 
-    addSucc(...bbs: BBlock[]) {
-        assert(this.succs.length == 0)
+    setSuccs(...bbs: BBlock[]) {
+        assert(!this.terminated)
+        this.terminated = true
         this.succs.push(...bbs)
         for (const b of bbs) {
             b.preds.push(this)
@@ -62,6 +63,7 @@ export class BBlock {
     insts: Inst[] = []
     succs: BBlock[] = []
     preds: BBlock[] = []
+    terminated = false
 }
 
 export class Graph {
@@ -89,10 +91,13 @@ export class Graph {
             }
         }
         for (const from of this.blocks) {
+            let succ_id = 0
+            const colors = new Map<number, string>([[0, 'red'], [1, 'green']])
             for (const to of from.succs) {
                 const f = from.insts[from.insts.length - 1]
                 const t = to.insts[0]
-                builder.push(`inst_${f.id}:res:s -> inst_${t.id}:res:n [ltail=cluster_BB${from.id}, lhead=cluster_BB${to.id}, color=red];`)
+                builder.push(`inst_${f.id}:res:s -> inst_${t.id}:res:n [ltail=cluster_BB${from.id}, lhead=cluster_BB${to.id}, color=${colors.get(succ_id)}];`)
+                succ_id += 1
             }
         }
         builder.push("\n\n")
@@ -175,7 +180,7 @@ export function convertFunctionToGraph(fn: ts.FunctionDeclaration): {g: Graph, a
         case ts.SyntaxKind.Block: {
             scoped(() => {
                 const bb = g.bb();
-                cur_bb.addSucc(bb);
+                cur_bb.setSuccs(bb);
                 cur_bb = bb;
                 for (const i of (n as ts.Block).statements) {
                     traverse(i)
@@ -199,16 +204,16 @@ export function convertFunctionToGraph(fn: ts.FunctionDeclaration): {g: Graph, a
             const bbThen = g.bb();
             const bbEnd = g.bb();
             let bbElse = (c.elseStatement !== undefined) ? g.bb() : bbEnd;
-            cur_bb.addSucc(bbElse, bbThen)
+            cur_bb.setSuccs(bbElse, bbThen)
             cur_bb = bbThen
             traverse(c.thenStatement)
-            if (cur_bb.succs.length == 0) {
-                cur_bb.addSucc(bbEnd)
+            if (!cur_bb.terminated) {
+                cur_bb.setSuccs(bbEnd)
             }
             if (c.elseStatement !== undefined) {
                 cur_bb = bbElse;
                 traverse(c.elseStatement);
-                cur_bb.addSucc(bbEnd);
+                cur_bb.setSuccs(bbEnd);
             }
             cur_bb = bbEnd
             return undefined
@@ -235,6 +240,7 @@ export function convertFunctionToGraph(fn: ts.FunctionDeclaration): {g: Graph, a
             if (rt !== undefined) {
                 ins.addInput(rt)
             }
+            cur_bb.setSuccs()
             return undefined
         }
         case ts.SyntaxKind.BinaryExpression: {
@@ -259,20 +265,20 @@ export function convertFunctionToGraph(fn: ts.FunctionDeclaration): {g: Graph, a
             const cond = g.bb()
             const body = g.bb()
             const end = g.bb()
-            cur_bb.addSucc(cond)
+            cur_bb.setSuccs(cond)
 
             cur_bb = cond
             const condInst = traverse(w.expression)!
             cur_bb.inst("jfalse").addInput(condInst)
-            cur_bb.addSucc(end, body)
+            cur_bb.setSuccs(end, body)
 
             scoped(() => {
                 cur_bb = body
                 cur_state.breakTo = end
                 cur_state.continueTo = cond
                 traverse(w.statement)
-                if (cur_bb.succs.length == 0) {
-                    cur_bb.addSucc(cond)
+                if (!cur_bb.terminated) {
+                    cur_bb.setSuccs(cond)
                 }
             })
 
@@ -292,15 +298,15 @@ export function convertFunctionToGraph(fn: ts.FunctionDeclaration): {g: Graph, a
                 const incBB = g.bb()
                 const endBB = g.bb()
 
-                cur_bb.addSucc(condBB)
+                cur_bb.setSuccs(condBB)
                 cur_bb = condBB
                 if (f.condition !== undefined) {
                     const j = traverse(f.condition)!
                     const jf = cur_bb.inst("jfalse")
                     jf.addInput(j)
-                    cur_bb.addSucc(endBB, bodyBB)
+                    cur_bb.setSuccs(endBB, bodyBB)
                 } else {
-                    cur_bb.addSucc(bodyBB)
+                    cur_bb.setSuccs(bodyBB)
                 }
 
                 scoped(() => {
@@ -308,14 +314,14 @@ export function convertFunctionToGraph(fn: ts.FunctionDeclaration): {g: Graph, a
                     cur_state.continueTo = incBB
                     cur_bb = bodyBB
                     traverse(f.statement)
-                    cur_bb.addSucc(incBB)
+                    cur_bb.setSuccs(incBB)
                 })
 
                 cur_bb = incBB
                 if (f.incrementor !== undefined) {
                     traverse(f.incrementor)
                 }
-                cur_bb.addSucc(condBB)
+                cur_bb.setSuccs(condBB)
 
                 cur_bb = endBB
             })
@@ -336,11 +342,14 @@ export function convertFunctionToGraph(fn: ts.FunctionDeclaration): {g: Graph, a
             return undefined
         }
         case ts.SyntaxKind.BreakStatement: {
-            cur_bb.addSucc(cur_state.breakTo!)
+            cur_bb.setSuccs(cur_state.breakTo!)
+            cur_bb = g.bb()
             return undefined
         }
         case ts.SyntaxKind.ContinueStatement: {
-            cur_bb.addSucc(cur_state.continueTo!)
+            cur_bb.setSuccs(cur_state.continueTo!)
+            const old = cur_bb
+            cur_bb = g.bb()
             return undefined
         }
         case ts.SyntaxKind.VariableStatement: {
@@ -443,6 +452,18 @@ export function graphToSSA(g: Graph, allNames: Set<string>): void {
 }
 
 export function eliminateEmptyBB(g: Graph): void {
+    const visited = new Set<BBlock>()
+    const dfs = (x: BBlock) => {
+        if (visited.has(x)) {
+            return
+        }
+        visited.add(x)
+        x.succs.forEach(dfs)
+    }
+    dfs(g.entry)
+    g.blocks = g.blocks.filter(y => visited.has(y))
+    g.blocks.forEach(b => b.preds = b.preds.filter(y => visited.has(y)))
+
     let was = true
     while (was) {
         was = false

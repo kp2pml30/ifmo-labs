@@ -1,0 +1,21 @@
+<script src="main.js"></script>
+<script>
+function run() {
+    const el = document.getElementById('text')
+    const to = document.getElementById('out')
+    window.runOn(el.value, to)
+}
+</script>
+
+<table style="width: 100%;">
+<tr>
+<td style="width: 30%;">
+<textarea id="text" style="width: 100%; resize: vertical;" rows="30">
+</textarea>
+<br>
+<button onclick="run()">Update!</button>
+</td>
+<td><div id="out"></div></td>
+</tr>
+</table>
+<br>

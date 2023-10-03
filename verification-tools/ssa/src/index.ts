@@ -10,7 +10,7 @@ import assert from 'assert'
 
     let stage = 0
     const save = async function() {
-        writeFile(`${out}.${stage++}.dot`, g.toDot())
+        await writeFile(`${out}.${stage++}.dot`, g.toDot())
     }
 
     const fle = (await readFile(fName)).toString()
@@ -19,13 +19,13 @@ import assert from 'assert'
     assert(f.statements[0].kind == ts.SyntaxKind.FunctionDeclaration);
 
     const {g, allNames} = graph.convertFunctionToGraph(f.statements[0] as ts.FunctionDeclaration)
-    save()
+    await save()
     graph.eliminateEmptyBB(g)
-    save()
+    await save()
     graph.graphToSSA(g, allNames)
-    save()
+    await save()
     graph.eliminatePhi(g)
-    save()
+    await save()
     graph.eliminateEmptyBB(g)
-    save()
+    await save()
 })()
