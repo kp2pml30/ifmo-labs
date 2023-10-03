@@ -12,7 +12,7 @@ export function runOn(text: string, to: HTMLDivElement): void {
     graph.graphToSSA(g, allNames)
     graph.eliminatePhi(g)
     graph.eliminateEmptyBB(g)
-    dot.graphviz(to).renderDot(g.toDot())
+    dot.graphviz(to, {width: to.clientWidth, height: to.clientHeight}).renderDot(g.toDot())
 }
 
 (window as any)['runOn'] = runOn

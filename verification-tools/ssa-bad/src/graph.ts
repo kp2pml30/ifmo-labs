@@ -97,6 +97,15 @@ export class BBlock {
         return r;
     }
 
+    jfalse(cond: Input, a: BBlock, b: BBlock): Inst {
+        const term = this.inst("jfalse")
+        term.returns = false
+        term.dumpAlways = true
+        term.addInput(cond)
+        this.setSuccs(a, b)
+        return term
+    }
+
     phi(name: string): Inst {
         const r = new Inst(this, this.graph.next_inst++, `phi_${name}`)
         this.insts.splice(0, 0, r)
@@ -258,13 +267,10 @@ export function convertFunctionToGraph(fn: ts.FunctionDeclaration): {g: Graph, a
         case ts.SyntaxKind.IfStatement: {
             const c = n as ts.IfStatement
             const rs = traverse(c.expression)!
-            const term = cur_bb.inst("jfalse");
-            term.returns = false
-            term.addInput(rs)
             const bbThen = g.bb();
             const bbEnd = g.bb();
             let bbElse = (c.elseStatement !== undefined) ? g.bb() : bbEnd;
-            cur_bb.setSuccs(bbElse, bbThen)
+            const term = cur_bb.jfalse(rs, bbElse, bbThen)
             cur_bb = bbThen
             traverse(c.thenStatement)
             if (!cur_bb.terminated) {
@@ -337,10 +343,7 @@ export function convertFunctionToGraph(fn: ts.FunctionDeclaration): {g: Graph, a
 
             cur_bb = cond
             const condInst = traverse(w.expression)!
-            const term = cur_bb.inst("jfalse")
-            term.addInput(condInst)
-            term.returns = false
-            cur_bb.setSuccs(end, body)
+            const term = cur_bb.jfalse(condInst, end, body)
 
             scoped(() => {
                 cur_bb = body
@@ -372,10 +375,7 @@ export function convertFunctionToGraph(fn: ts.FunctionDeclaration): {g: Graph, a
                 cur_bb = condBB
                 if (f.condition !== undefined) {
                     const j = traverse(f.condition)!
-                    const jf = cur_bb.inst("jfalse")
-                    jf.addInput(j)
-                    jf.returns = false
-                    cur_bb.setSuccs(endBB, bodyBB)
+                    const jf = cur_bb.jfalse(j, endBB, bodyBB)
                 } else {
                     cur_bb.setSuccs(bodyBB)
                 }
