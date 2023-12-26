@@ -1,0 +1,6 @@
+c Contradictory unit clauses
+c label:unsatisfiable
+c label:easy
+p cnf 1 2
+1 0
+-1 0

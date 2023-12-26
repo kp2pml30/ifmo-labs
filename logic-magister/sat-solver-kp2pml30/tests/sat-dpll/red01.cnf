@@ -1,0 +1,6 @@
+c by jose quiroga
+c pigeon hole instance (unsat)(2 holes)(var rot by hole)
+c #var #cla
+p cnf 4 2
+1 2 3 4 0
+-4 0

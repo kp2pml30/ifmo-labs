@@ -1,0 +1,242 @@
+p cnf 66 174
+-1 0
+2 0
+c gen_BVXOR v1 (SAT) [3...6], v2 (SAT) [7...10]
+c add_Tseitin_XOR 23=3^7
+-3 -7 -23 0
+3 7 -23 0
+3 -7 23 0
+-3 7 23 0
+c add_Tseitin_XOR 24=4^8
+-4 -8 -24 0
+4 8 -24 0
+4 -8 24 0
+-4 8 24 0
+c add_Tseitin_XOR 25=5^9
+-5 -9 -25 0
+5 9 -25 0
+5 -9 25 0
+-5 9 25 0
+c add_Tseitin_XOR 26=6^10
+-6 -10 -26 0
+6 10 -26 0
+6 -10 26 0
+-6 10 26 0
+c gen_EQ for two bitvectors, v1 (SAT) [11...14], v2 (SAT) [23...26]
+c gen_BVXOR v1 (SAT) [11...14], v2 (SAT) [23...26]
+c add_Tseitin_XOR 27=11^23
+-11 -23 -27 0
+11 23 -27 0
+11 -23 27 0
+-11 23 27 0
+c add_Tseitin_XOR 28=12^24
+-12 -24 -28 0
+12 24 -28 0
+12 -24 28 0
+-12 24 28 0
+c add_Tseitin_XOR 29=13^25
+-13 -25 -29 0
+13 25 -29 0
+13 -25 29 0
+-13 25 29 0
+c add_Tseitin_XOR 30=14^26
+-14 -26 -30 0
+14 26 -30 0
+14 -26 30 0
+-14 26 30 0
+c gen_OR_list(var=27, width=4), var out (SAT) 31
+c add_Tseitin_OR_list(var=27, width=4, var_out=31)
+27 28 29 30 -31 0
+-27 31 0
+-28 31 0
+-29 31 0
+-30 31 0
+c gen_NOT id (SMT) internal!3, (SAT) var=31, out (SMT) id=internal!4 out (SAT) var=32
+-32 -31 0
+32 31 0
+c create_assert() id=internal!4 var=32
+32 0
+c gen_BVXOR v1 (SAT) [7...10], v2 (SAT) [11...14]
+c add_Tseitin_XOR 33=7^11
+-7 -11 -33 0
+7 11 -33 0
+7 -11 33 0
+-7 11 33 0
+c add_Tseitin_XOR 34=8^12
+-8 -12 -34 0
+8 12 -34 0
+8 -12 34 0
+-8 12 34 0
+c add_Tseitin_XOR 35=9^13
+-9 -13 -35 0
+9 13 -35 0
+9 -13 35 0
+-9 13 35 0
+c add_Tseitin_XOR 36=10^14
+-10 -14 -36 0
+10 14 -36 0
+10 -14 36 0
+-10 14 36 0
+c gen_EQ for two bitvectors, v1 (SAT) [15...18], v2 (SAT) [33...36]
+c gen_BVXOR v1 (SAT) [15...18], v2 (SAT) [33...36]
+c add_Tseitin_XOR 37=15^33
+-15 -33 -37 0
+15 33 -37 0
+15 -33 37 0
+-15 33 37 0
+c add_Tseitin_XOR 38=16^34
+-16 -34 -38 0
+16 34 -38 0
+16 -34 38 0
+-16 34 38 0
+c add_Tseitin_XOR 39=17^35
+-17 -35 -39 0
+17 35 -39 0
+17 -35 39 0
+-17 35 39 0
+c add_Tseitin_XOR 40=18^36
+-18 -36 -40 0
+18 36 -40 0
+18 -36 40 0
+-18 36 40 0
+c gen_OR_list(var=37, width=4), var out (SAT) 41
+c add_Tseitin_OR_list(var=37, width=4, var_out=41)
+37 38 39 40 -41 0
+-37 41 0
+-38 41 0
+-39 41 0
+-40 41 0
+c gen_NOT id (SMT) internal!7, (SAT) var=41, out (SMT) id=internal!8 out (SAT) var=42
+-42 -41 0
+42 41 0
+c create_assert() id=internal!8 var=42
+42 0
+c gen_BVXOR v1 (SAT) [11...14], v2 (SAT) [15...18]
+c add_Tseitin_XOR 43=11^15
+-11 -15 -43 0
+11 15 -43 0
+11 -15 43 0
+-11 15 43 0
+c add_Tseitin_XOR 44=12^16
+-12 -16 -44 0
+12 16 -44 0
+12 -16 44 0
+-12 16 44 0
+c add_Tseitin_XOR 45=13^17
+-13 -17 -45 0
+13 17 -45 0
+13 -17 45 0
+-13 17 45 0
+c add_Tseitin_XOR 46=14^18
+-14 -18 -46 0
+14 18 -46 0
+14 -18 46 0
+-14 18 46 0
+c gen_EQ for two bitvectors, v1 (SAT) [19...22], v2 (SAT) [43...46]
+c gen_BVXOR v1 (SAT) [19...22], v2 (SAT) [43...46]
+c add_Tseitin_XOR 47=19^43
+-19 -43 -47 0
+19 43 -47 0
+19 -43 47 0
+-19 43 47 0
+c add_Tseitin_XOR 48=20^44
+-20 -44 -48 0
+20 44 -48 0
+20 -44 48 0
+-20 44 48 0
+c add_Tseitin_XOR 49=21^45
+-21 -45 -49 0
+21 45 -49 0
+21 -45 49 0
+-21 45 49 0
+c add_Tseitin_XOR 50=22^46
+-22 -46 -50 0
+22 46 -50 0
+22 -46 50 0
+-22 46 50 0
+c gen_OR_list(var=47, width=4), var out (SAT) 51
+c add_Tseitin_OR_list(var=47, width=4, var_out=51)
+47 48 49 50 -51 0
+-47 51 0
+-48 51 0
+-49 51 0
+-50 51 0
+c gen_NOT id (SMT) internal!11, (SAT) var=51, out (SMT) id=internal!12 out (SAT) var=52
+-52 -51 0
+52 51 0
+c create_assert() id=internal!12 var=52
+52 0
+c gen_EQ for two bitvectors, v1 (SAT) [19...22], v2 (SAT) [7...10]
+c gen_BVXOR v1 (SAT) [19...22], v2 (SAT) [7...10]
+c add_Tseitin_XOR 53=19^7
+-19 -7 -53 0
+19 7 -53 0
+19 -7 53 0
+-19 7 53 0
+c add_Tseitin_XOR 54=20^8
+-20 -8 -54 0
+20 8 -54 0
+20 -8 54 0
+-20 8 54 0
+c add_Tseitin_XOR 55=21^9
+-21 -9 -55 0
+21 9 -55 0
+21 -9 55 0
+-21 9 55 0
+c add_Tseitin_XOR 56=22^10
+-22 -10 -56 0
+22 10 -56 0
+22 -10 56 0
+-22 10 56 0
+c gen_OR_list(var=53, width=4), var out (SAT) 57
+c add_Tseitin_OR_list(var=53, width=4, var_out=57)
+53 54 55 56 -57 0
+-53 57 0
+-54 57 0
+-55 57 0
+-56 57 0
+c gen_NOT id (SMT) internal!14, (SAT) var=57, out (SMT) id=internal!15 out (SAT) var=58
+-58 -57 0
+58 57 0
+c gen_EQ for two bitvectors, v1 (SAT) [15...18], v2 (SAT) [3...6]
+c gen_BVXOR v1 (SAT) [15...18], v2 (SAT) [3...6]
+c add_Tseitin_XOR 59=15^3
+-15 -3 -59 0
+15 3 -59 0
+15 -3 59 0
+-15 3 59 0
+c add_Tseitin_XOR 60=16^4
+-16 -4 -60 0
+16 4 -60 0
+16 -4 60 0
+-16 4 60 0
+c add_Tseitin_XOR 61=17^5
+-17 -5 -61 0
+17 5 -61 0
+17 -5 61 0
+-17 5 61 0
+c add_Tseitin_XOR 62=18^6
+-18 -6 -62 0
+18 6 -62 0
+18 -6 62 0
+-18 6 62 0
+c gen_OR_list(var=59, width=4), var out (SAT) 63
+c add_Tseitin_OR_list(var=59, width=4, var_out=63)
+59 60 61 62 -63 0
+-59 63 0
+-60 63 0
+-61 63 0
+-62 63 0
+c gen_NOT id (SMT) internal!17, (SAT) var=63, out (SMT) id=internal!18 out (SAT) var=64
+-64 -63 0
+64 63 0
+c gen_AND id1 (SMT) internal!15, id2 (SMT) internal!18, var1 (SAT) 58, var2 (SAT) 64, out id (SMT) internal!19, out var (SAT) 65
+c add_Tseitin_AND 65=58&64
+-58 -64 65 0
+58 -65 0
+64 -65 0
+c gen_NOT id (SMT) internal!19, (SAT) var=65, out (SMT) id=internal!20 out (SAT) var=66
+-66 -65 0
+66 65 0
+c create_assert() id=internal!20 var=66
+66 0
