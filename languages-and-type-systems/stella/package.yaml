@@ -28,9 +28,9 @@ internal-libraries:
       - alex
       - happy
     source-dirs: gen-parser
-    extra-source-files:
-      - src/Gen/LexSyntax.x
-      - src/Gen/ParSyntax.y
+    #extra-source-files:
+    #  - src/Gen/LexSyntax.x
+    #  - src/Gen/ParSyntax.y
     dependencies:
       - array
       - mtl
@@ -40,14 +40,17 @@ internal-libraries:
 
 library:
   source-dirs: src
-  extra-source-files:
-    - src/Gen/LexSyntax.x
-    - src/Gen/ParSyntax.y
   dependencies:
     - stella-parser
     - array
     - mtl
     - transformers
+  default-extensions:
+      - DerivingStrategies
+      - LambdaCase
+      - TupleSections
+      - GeneralizedNewtypeDeriving
+      - RecordWildCards
 
 executables:
   stella-exe:
@@ -60,6 +63,12 @@ executables:
     dependencies:
       - stella-parser
       - stella
+    default-extensions:
+      - DerivingStrategies
+      - LambdaCase
+      - TupleSections
+      - GeneralizedNewtypeDeriving
+      - RecordWildCards
 
 tests:
   stella-test:
