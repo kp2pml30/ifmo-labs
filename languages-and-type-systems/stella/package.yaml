@@ -1,0 +1,74 @@
+name:                stella
+version:             0.0.1.0
+license:             GPL-3
+author:              "kp2pml30"
+maintainer:          "kp2pml30@gmail.com"
+copyright:           "2024 kp2pml30"
+
+description:         Homework type checker for stella language
+
+dependencies:
+- base >= 4.7 && < 5
+
+ghc-options:
+- -Wall
+- -Wcompat
+- -Widentities
+- -Wincomplete-record-updates
+- -Wincomplete-uni-patterns
+- -Wmissing-export-lists
+- -Wmissing-home-modules
+- -Wpartial-fields
+- -Wredundant-constraints
+- -Wno-tabs
+
+internal-libraries:
+  stella-parser:
+    build-tool-depends:
+      - alex
+      - happy
+    source-dirs: gen-parser
+    extra-source-files:
+      - src/Gen/LexSyntax.x
+      - src/Gen/ParSyntax.y
+    dependencies:
+      - array
+      - mtl
+      - transformers
+    ghc-options:
+      - -w
+
+library:
+  source-dirs: src
+  extra-source-files:
+    - src/Gen/LexSyntax.x
+    - src/Gen/ParSyntax.y
+  dependencies:
+    - stella-parser
+    - array
+    - mtl
+    - transformers
+
+executables:
+  stella-exe:
+    main:                Main.hs
+    source-dirs:         app
+    ghc-options:
+      - -threaded
+      - -rtsopts
+      - -with-rtsopts=-N
+    dependencies:
+      - stella-parser
+      - stella
+
+tests:
+  stella-test:
+    main:                Spec.hs
+    source-dirs:         test
+    ghc-options:
+      - -threaded
+      - -rtsopts
+      - -with-rtsopts=-N
+    dependencies:
+      - stella
+      - stella-parser

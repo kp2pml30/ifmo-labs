@@ -10,3 +10,6 @@
 [submodule "languages-and-type-systems/typst-prooftree"]
 	path = languages-and-type-systems/typst-prooftree
 	url = https://github.com/SkiFire13/typst-prooftree.git
+[submodule "languages-and-type-systems/stella/test/golden"]
+	path = languages-and-type-systems/stella/test/golden
+	url = https://github.com/AbsoluteNikola/stella-tests.git
