@@ -24,9 +24,9 @@ ghc-options:
 
 internal-libraries:
   stella-parser:
-    build-tool-depends:
-      - alex
-      - happy
+    #extra-deps:
+    #  - alex
+    #  - happy
     source-dirs: gen-parser
     #extra-source-files:
     #  - src/Gen/LexSyntax.x
@@ -45,6 +45,8 @@ library:
     - array
     - mtl
     - transformers
+    - containers
+    - disjoint-containers ==0.3.*
   default-extensions:
       - DerivingStrategies
       - LambdaCase

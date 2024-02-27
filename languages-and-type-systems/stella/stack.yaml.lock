@@ -3,11 +3,18 @@
 # For more information, please see the documentation at:
 #   https://docs.haskellstack.org/en/stable/lock_files
 
-packages: []
+packages:
+- completed:
+    hackage: disjoint-containers-0.3.0.1@sha256:4a6f4de982d5c3492e4754836e15b47c24b6241bf19312ec586ff5694b34bd9e,1565
+    pantry-tree:
+      size: 454
+      sha256: 88359af2a54f63d92689cc164e4c23331dd8a2c7ec16af6f725e4d6c9fcb6ef5
+  original:
+    hackage: disjoint-containers-0.3.0.1@sha256:4a6f4de982d5c3492e4754836e15b47c24b6241bf19312ec586ff5694b34bd9e,1565
 snapshots:
 - completed:
-    sha256: 2fdd7d3e54540062ef75ca0a73ca3a804c527dbf8a4cadafabf340e66ac4af40
     size: 712469
     url: https://raw.githubusercontent.com/commercialhaskell/stackage-snapshots/master/lts/22/11.yaml
+    sha256: 2fdd7d3e54540062ef75ca0a73ca3a804c527dbf8a4cadafabf340e66ac4af40
   original:
     url: https://raw.githubusercontent.com/commercialhaskell/stackage-snapshots/master/lts/22/11.yaml

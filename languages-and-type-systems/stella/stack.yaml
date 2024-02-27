@@ -3,3 +3,6 @@ resolver:
 
 packages:
   - .
+
+extra-deps:
+  - disjoint-containers-0.3.0.1@sha256:4a6f4de982d5c3492e4754836e15b47c24b6241bf19312ec586ff5694b34bd9e,1565
