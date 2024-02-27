@@ -2,6 +2,19 @@
 
 require 'open3'
 require 'etc'
+require 'optparse'
+
+$opts = {
+	:filter => /.*/
+}
+
+OptionParser.new { |o|
+	o.on '--help' do
+		puts o
+		exit 0
+	end
+	o.on '--filter=FILTER', Regexp
+}.parse!(into: $opts)
 
 Dir.chdir __dir__
 
@@ -51,10 +64,12 @@ def run_get_err(path, expected_error)
 			puts "\tdetected error is #{got_err}"
 		end
 		if stdout_str != ""
-			puts stdout_str.gsub(/^/, "\t")
+			puts "\tstdout"
+			puts stdout_str.strip.gsub(/^/, "\t\t")
 		end
 		if stderr_str != ""
-			puts stderr_str.gsub(/^/, "\t")
+			puts "\tstderr"
+			puts stderr_str.strip.gsub(/^/, "\t\t")
 		end
 	}
 	if expected_error.nil?
@@ -83,14 +98,16 @@ end
 
 tp = ThreadPool.new
 
-Dir::glob("./golden/ok/**/*.st") { |f|
+Dir::glob("./**/ok/**/*.st") { |f|
+	next if not (f =~ $opts[:filter])
 	$tests += 1
 	tp.run {
 		run_get_err f, nil
 	}
 }
 
-Dir::glob("./golden/bad/**/*.st") { |f|
+Dir::glob("./**/bad/**/*.st") { |f|
+	next if not (f =~ $opts[:filter])
 	$tests += 1
 	m = /\/bad\/(?<err>[^\/]+)\//.match(f)
 	tp.run {

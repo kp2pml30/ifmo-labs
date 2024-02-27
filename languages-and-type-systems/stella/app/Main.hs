@@ -6,6 +6,7 @@ import Gen.AbsSyntax
 import System.Environment ( getArgs )
 import System.Exit        ( exitFailure, exitSuccess )
 import Control.Monad
+import System.IO
 
 import Gen.AbsSyntax   ()
 import Gen.LexSyntax   ( Token, mkPosToken )
@@ -22,7 +23,7 @@ run :: ParseFun Program -> String -> IO ()
 run p s =
 	case p ts of
 		Left err -> do
-			putStrLn "\nParse              Failed...\n"
+			putStrLn "Parse failed..."
 			putStrLn "Tokens:"
 			mapM_ (putStrLn . showPosToken . mkPosToken) ts
 			putStrLn err
@@ -33,18 +34,19 @@ run p s =
 				[] -> exitSuccess
 				lst -> do
 					forM_ lst $ \ErrorData {..} -> do
-						print code
+						hPutStrLn stderr $ show code
 						forM_ related $ \(header, text) -> do
-							putStrLn $ "\t" ++ header
-							putStrLn $ "\t" ++ text
-							putStrLn ""
+							hPutStrLn stderr $ "\t" ++ header
+							hPutStrLn stderr $ "\t" ++ text
+							hPutStrLn stderr ""
+					exitFailure
 	where
 		ts = myLexer s
 		showPosToken ((l,c),t) = concat [ show l, ":", show c, "\t", show t ]
 
 showTree :: Program -> IO ()
 showTree tree = do
-	putStrLn $ "\n[Abstract Syntax]\n\n" ++ show tree
+	putStrLn $ show tree
 
 main :: IO ()
 main = do
