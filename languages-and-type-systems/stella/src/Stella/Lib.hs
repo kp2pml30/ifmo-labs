@@ -8,13 +8,15 @@ import Control.Monad
 import Control.Monad.Except
 import Control.Monad.State
 
-import qualified Gen.PrintSyntax as Printer -- ( Print, printTree )
+import System.IO.Unsafe (unsafePerformIO)
 
 import Data.Either
 import qualified Data.List as List
 import qualified Data.Map as Map
 import qualified Data.DisjointSet as DisjointSet
 import Data.DisjointSet (DisjointSet)
+
+import qualified Gen.PrintSyntax as Printer -- ( Print, printTree )
 
 import Stella.Errs
 import Gen.AbsSyntax as St
@@ -143,13 +145,14 @@ unconvType (TypeList t) = TList <$> unconvType t
 --unconvType (TypeVar StellaIdent) =
 unconvType x = todo $ "unconvType " ++ show x
 
-scrapDecl :: Decl -> CheckerMonad ()
-scrapDecl fn@(DeclFun annots name params retType throwType decls expr) = do
+scrapDecl :: String -> Decl -> CheckerMonad ()
+scrapDecl pref fn@(DeclFun annots name params retType throwType decls expr) = do
 	oldNames <- gets globalNames
-	when ((unident name) `Map.member` oldNames) $ do
+	let realName = pref ++ unident name
+	when (realName `Map.member` oldNames) $ do
 		throwError $ ErrorData ERROR_MISSING_MAIN [("function", Printer.printTree fn)]
 	when (not $ null annots) $ todo "annots"
-	when (not $ null decls) $ todo "decls"
+	-- forM_ decls $ scrapDecl (realName ++ "::")
 	when (throwType /= NoThrowType) $ todo "throw type"
 	tParTypes <- forM params $ \(AParamDecl id typ) -> do
 		unconvType typ
@@ -158,12 +161,12 @@ scrapDecl fn@(DeclFun annots name params retType throwType decls expr) = do
 			NoReturnType -> pure TUnit
 			SomeReturnType t -> unconvType t)
 	let typ = TFn tParTypes tRetType
-	modify $ \s -> s { globalNames = Map.insert (unident name) typ (globalNames s) }
+	modify $ \s -> s { globalNames = Map.insert realName typ (globalNames s) }
 -- scrapDecl (DeclFunGeneric [Annotation] StellaIdent [StellaIdent] [ParamDecl] ReturnType ThrowType [Decl] Expr)
 -- scrapDecl (DeclTypeAlias StellaIdent Type)
 -- scrapDecl (DeclExceptionType Type)
 -- scrapDecl (DeclExceptionVariant StellaIdent Type)
-scrapDecl d = todo $ "scrapDecl " ++ show d
+scrapDecl _ d = todo $ "scrapDecl " ++ show d
 
 unexpectedTypeBy :: TType -> TType -> Err
 unexpectedTypeBy _ (TTuple _) = ERROR_UNEXPECTED_TUPLE
@@ -189,17 +192,16 @@ getVarRepr v = do
 unifyVarWith :: Bool -> Int -> TType -> CheckerMonad TType
 unifyVarWith shouldFlip var t = do
 	t <- getActualType t
-	let uni = if shouldFlip then unify else flip unify
+	let uni = if shouldFlip then flip unify else unify
 	var' <- getVarRepr var
 	kw <- gets knownVars
 	case Map.lookup var' kw of
 		Nothing -> do
-			-- TVar var'
 			modify $ \s -> s { knownVars = Map.insert var' (Right t) (knownVars s) }
 			pure t
 		Just (Right t') -> do
-			rt <- uni t t'
-			modify $ \s -> s { knownVars = Map.insert var' (Right t) (knownVars s) }
+			rt <- uni t' t
+			modify $ \s -> s { knownVars = Map.insert var' (Right rt) (knownVars s) }
 			pure rt
 		Just (Left cons) -> do
 			forM_ cons $ \case
@@ -220,8 +222,26 @@ getActualType (TVar t) = do
 	kw <- gets knownVars
 	case Map.lookup t' kw of
 		Just (Right t) -> pure t
-		_ -> pure $ TVar t
+		_ -> pure $ TVar t'
+getActualType (TTuple sub) = TTuple <$> forM sub getActualType
+getActualType (TFn args ret) = TFn <$> forM args getActualType <*> getActualType ret
+getActualType (TList el) = TList <$> getActualType el
+getActualType (TRecord mp) = do
+	TRecord . Map.fromList <$> forM (Map.toList mp) (\(f, s) -> (f,) <$> getActualType s)
+getActualType (TSum l r) = TSum <$> getActualType l <*> getActualType r
+getActualType (TVariant mp) = do
+	TVariant . Map.fromList <$> forM (Map.toList mp) (\(f, s) -> (f,) <$> getActualType s)
 getActualType a = pure a
+
+hasVar :: TType -> Bool
+hasVar (TVar t) = True
+hasVar (TTuple sub) = any hasVar sub
+hasVar (TFn args ret) = hasVar ret || any hasVar args
+hasVar (TList el) = hasVar el
+hasVar (TRecord mp) = any hasVar $ snd <$> Map.toList mp
+hasVar (TSum l r) = hasVar l || hasVar r
+hasVar (TVariant mp) = any hasVar $ snd <$> Map.toList mp
+hasVar a = False
 
 unify :: TType -> TType -> CheckerMonad TType
 unify x y | x == y = pure x
@@ -236,10 +256,10 @@ unify (TVar x) (TVar y) = do
 			pure $ TVar x'
 		(Just a, Nothing) -> do
 			modify $ \s -> s { typeVars = DisjointSet.union x' y' tv, knownVars = Map.insert y' a kw }
-			pure $ TVar x
+			pure $ either (const $ TVar x') id a
 		(Nothing, Just a) -> do
 			modify $ \s -> s { typeVars = DisjointSet.union x' y' tv, knownVars = Map.insert x' a kw }
-			pure $ TVar y
+			pure $ either (const $ TVar y') id a
 		(Just (Right a), Just (Right b)) -> do
 			rt <- unify a b
 			modify $ \s -> s { typeVars = DisjointSet.union x' y' tv, knownVars = Map.insert x' (Right rt) (Map.insert y' (Right rt) (knownVars s)) }
@@ -247,11 +267,11 @@ unify (TVar x) (TVar y) = do
 		(Just (Left a), Just (Left b)) -> do
 			let res = (Left $ a ++ b)
 			modify $ \s -> s { typeVars = DisjointSet.union x' y' tv, knownVars = Map.insert x' res (Map.insert y' res (knownVars s)) }
-			pure $ TVar x
+			pure $ TVar x'
 		(Just (Left a), Just (Right b)) ->
-			unifyVarWith True x b
+			unifyVarWith False x b
 		(Just (Right a), Just (Left b)) -> do
-			unifyVarWith False y a
+			unifyVarWith True y a
 unify (TVar x) y = unifyVarWith False x y
 unify x (TVar y) = unifyVarWith True y x
 unify x y | typeCtorId x /= typeCtorId y =
@@ -272,7 +292,7 @@ unify (TRecord a) (TRecord b) = do
 		pure $ (an, rt)
 	pure $ TRecord $ Map.fromList l
 unify x@(TFn apars aret) y@(TFn bpars bret) = do
-	when (length apars /= length bpars) $ throwError $ ErrorData ERROR_UNEXPECTED_TYPE_FOR_PARAMETER [("x", show x), ("y", show y)]
+	when (length apars /= length bpars) $ throwError $ ErrorData ERROR_INCORRECT_NUMBER_OF_ARGUMENTS [("x", show x), ("y", show y)]
 	truePars <- forM (zip apars bpars) (uncurry unify) `catchError`
 		\(ErrorData _ c) -> throwError $ ErrorData ERROR_UNEXPECTED_TYPE_FOR_PARAMETER (c ++ [("fn1", show x), ("fn2", show y)])
 	trueRet <- unify aret bret
@@ -283,7 +303,7 @@ unify x@(TSum al ar) y@(TSum bl br) = do
 	pure $ TSum rl rr
 unify (TVariant x) (TVariant y) = do
 	let inter = Map.intersection y x
-	when (Map.size inter /= Map.size y) $ throwError $ ErrorData ERROR_UNEXPECTED_TYPE_FOR_EXPRESSION [("x", show x), ("y", show y)]
+	when (Map.size inter /= Map.size y) $ throwError $ ErrorData ERROR_UNEXPECTED_VARIANT_LABEL [("x", show x), ("y", show y)]
 	forM_ (Map.toList inter) $ \(n, v) ->
 		unify (x Map.! n) v
 	pure (TVariant x)
@@ -293,6 +313,91 @@ patternFromExprType :: Pattern -> TType -> CheckerMonad (Map.Map String TType)
 patternFromExprType (PatternVar v) typ = do
 	pure $ Map.fromList [(unident v, typ)]
 patternFromExprType x t = todo $ "patternFromExprType " ++ show x ++ " " ++ show t
+
+data CoveredCases
+	= CoveredTrue
+	| CoveredFalse
+	| CoveredAll
+	| CoveredSum CoveredCases CoveredCases
+	| CoveredVariant (Map.Map String CoveredCases)
+	| CoveredNone
+	deriving (Eq, Show)
+
+isCoveredAll CoveredAll = True
+isCoveredAll _ = False
+
+mergeCoveredCases :: CoveredCases -> CoveredCases -> CheckerMonad CoveredCases
+CoveredNone `mergeCoveredCases` a = pure a
+a `mergeCoveredCases` CoveredNone = pure a
+CoveredFalse `mergeCoveredCases` CoveredTrue = pure CoveredAll
+CoveredTrue `mergeCoveredCases` CoveredFalse = pure CoveredAll
+CoveredAll `mergeCoveredCases` _ = pure CoveredAll
+(CoveredSum al ar) `mergeCoveredCases` (CoveredSum bl br) = do
+	rl <- mergeCoveredCases al bl
+	rr <- mergeCoveredCases ar br
+	case (rl, rr) of
+		(CoveredAll, CoveredAll) -> pure CoveredAll
+		_ -> pure $ CoveredSum rl rr
+CoveredVariant lv `mergeCoveredCases` CoveredVariant rv = do
+	let common = Map.keys $ Map.intersection lv rv
+	com <- forM common $ \k -> (k,) <$> mergeCoveredCases (lv Map.! k) (rv Map.! k)
+	let res = (Map.fromList com) `Map.union` (lv Map.\\ rv) `Map.union` (rv Map.\\ lv)
+	if all isCoveredAll $ snd <$> Map.toList res
+	then pure CoveredAll
+	else pure $ CoveredVariant res
+_ `mergeCoveredCases` CoveredAll = pure CoveredAll
+l `mergeCoveredCases` r = todo $ "mergeCoveredCases " ++ show l ++ " " ++ show r
+
+unifyInMatch :: TType -> TType -> CheckerMonad ()
+unifyInMatch exp got = do
+	(void $ unify exp got) `catchError` \(ErrorData _ ctx) ->
+		throwError $ ErrorData ERROR_UNEXPECTED_PATTERN_FOR_TYPE $
+			ctx ++ [("exp", show exp), ("got", show got)]
+
+checkMatch :: TType -> TType -> Pattern -> Expr -> CheckerMonad CoveredCases
+checkMatch scruType expType (PatternVar vn) expr =
+	scoped $ do
+		modify $ \s -> s { locals = Map.insert (unident vn) scruType (locals s) }
+		checkExpr expType expr
+		pure CoveredAll
+checkMatch scruType expType PatternFalse x = do
+	unifyInMatch TBool scruType
+	checkExpr expType x
+	pure CoveredFalse
+checkMatch scruType expType PatternTrue x = do
+	unifyInMatch TBool scruType
+	checkExpr expType x
+	pure CoveredTrue
+checkMatch scruType expType (PatternInl r) x = do
+	lt <- freshVar
+	rt <- freshVar
+	unifyInMatch (TSum lt rt) scruType
+	CoveredSum <$> checkMatch lt expType r x <*> pure CoveredNone
+checkMatch scruType expType (PatternInr r) x = do
+	lt <- freshVar
+	rt <- freshVar
+	unifyInMatch (TSum lt rt) scruType
+	CoveredSum CoveredNone <$> checkMatch rt expType r x
+checkMatch scruType expType PatternUnit x = do
+	unifyInMatch TUnit scruType
+	checkExpr expType x
+	pure CoveredAll
+checkMatch scruType expType (PatternVariant i v') x = do
+	fv <- freshVar
+	let v = case v' of
+		NoPatternData -> PatternUnit
+		SomePatternData d -> d
+	st <- getActualType scruType
+	let !_ = unsafePerformIO $ putStrLn $ "chkM " ++ show st
+	unifyInMatch scruType (TVariant $ Map.fromList [(unident i, fv)])
+	m <- checkMatch fv expType v x
+	pure $ CoveredVariant $ Map.fromList [(unident i, m)]
+checkMatch _ _ pat _ = todo $ "checkMatch " ++ show pat
+
+checkTotality :: TType -> CoveredCases -> CheckerMonad ()
+checkTotality _ CoveredAll = pure ()
+checkTotality t CoveredNone = throwError $ ErrorData ERROR_ILLEGAL_EMPTY_MATCHING [("for type", show t)]
+checkTotality t c = throwError $ ErrorData ERROR_NONEXHAUSTIVE_MATCH_PATTERNS [("for type", show t), ("covered", show c)]
 
 checkExpr :: TType -> St.Expr -> CheckerMonad ()
 checkExpr expType (Succ e) = do
@@ -327,7 +432,9 @@ checkExpr expType (If c t f) = do
 	checkExpr expType f
 checkExpr expType app@(Application f args) = do
 	argTypes <- forM args (const freshVar)
-	checkExpr (TFn argTypes expType) f
+	checkExpr (TFn argTypes expType) f `catchError` \case
+		ErrorData ERROR_UNEXPECTED_NUMBER_OF_PARAMETERS_IN_LAMBDA ctx -> throwError $ ErrorData ERROR_INCORRECT_NUMBER_OF_ARGUMENTS ctx
+		x -> throwError x
 	forM_ (zip argTypes args) (uncurry checkExpr)
 checkExpr expType (Let bindings inExpr) = do
 	newVars <- forM bindings $ \(APatternBinding pat exp) -> do
@@ -337,6 +444,10 @@ checkExpr expType (Let bindings inExpr) = do
 	scoped $ do
 		modify $ \s -> s { locals = List.foldl' Map.union (locals s) newVars }
 		checkExpr expType inExpr
+checkExpr expType l@(List []) = do
+	tVar <- freshVar
+	res <- unify expType (TList tVar)
+	getActualType tVar >>= \a -> when (hasVar a) $ throwError $ ErrorData ERROR_AMBIGUOUS_LIST [("list", show l)]
 checkExpr expType (List all) = do
 	tVar <- freshVar
 	res <- unify expType (TList tVar)
@@ -361,7 +472,9 @@ checkExpr expType (Abstraction params expr) = do
 	pars <- forM params $ \(AParamDecl i t) -> do
 		tt <- unconvType t
 		pure $ (unident i, tt)
-	_ <- unify expType $ TFn (snd <$> pars) rt
+	(void $ unify expType $ TFn (snd <$> pars) rt) `catchError` \rethrow@(ErrorData e ctx) -> do
+		when (e == ERROR_INCORRECT_NUMBER_OF_ARGUMENTS) $ throwError $ ErrorData ERROR_UNEXPECTED_NUMBER_OF_PARAMETERS_IN_LAMBDA ctx
+		throwError rethrow
 	scoped $ do
 		modify $ \s -> s { locals = Map.union (Map.fromList pars) (locals s) }
 		checkExpr rt expr
@@ -420,6 +533,16 @@ checkExpr expType (Variant i dat) = do
 			checkExpr fv e
 checkExpr expType (Fix e) =
 	checkExpr (TFn [expType] expType) e
+checkExpr expType (Match scrutinee cases) = do
+	fv <- freshVar
+	checkExpr fv scrutinee
+	let cm = checkMatch fv expType
+	let
+		ff a (AMatchCase p e) = do
+			b <- cm p e
+			mergeCoveredCases a b
+	covRes <- foldM ff CoveredNone cases
+	checkTotality fv covRes
 checkExpr expType x = todo $ "checkExpr " ++ show x ++ " expected " ++ show expType
 -- checkExpr (Assign Expr Expr)
 -- checkExpr (LetRec [PatternBinding] Expr)
@@ -449,32 +572,38 @@ checkExpr expType x = todo $ "checkExpr " ++ show x ++ " expected " ++ show expT
 -- checkExpr (Unfold Type Expr)
 -- checkExpr (ConstMemory MemoryAddress)
 
-checkDecl :: Decl -> CheckerMonad ()
-checkDecl fn@(DeclFun annots name params _ throwType decls expr) = do
+checkDecl :: String -> Decl -> CheckerMonad (String, TType)
+checkDecl pref fn@(DeclFun annots name params _ throwType decls expr) = do
+	let realName = pref ++ unident name
 	when (not $ null annots) $ todo "annots"
-	when (not $ null decls) $ todo "decls"
 	when (throwType /= NoThrowType) $ todo "throw type"
-	(parsTyp, retTyp) <- (gets $ (Map.! (unident name)) . globalNames) >>= \case
+	(parsTyp, retTyp) <- (gets $ (Map.! realName) . globalNames) >>= \case
 		(TFn parsTyp retTyp) -> pure (parsTyp, retTyp)
 		_ -> undefined
 	let paramNames = (\(AParamDecl i _) -> unident i) <$> params
 	scoped $ do
-		modify $ \s -> s { locals = Map.fromList (zip paramNames parsTyp) }
+		modify $ \s -> s { locals = Map.fromList (zip paramNames parsTyp) `Map.union` locals s }
+		forM_ decls $ \d -> do
+			scrapDecl (realName ++ "::") d
+			(n, t) <- checkDecl (realName ++ "::") d
+			modify $ \s -> s { locals = Map.insert n t $ locals s }
 		checkExpr retTyp expr
+	pure (unident name, TFn parsTyp retTyp)
 -- checkDecl (DeclFunGeneric [Annotation] StellaIdent [StellaIdent] [ParamDecl] ReturnType ThrowType [Decl] Expr)
 -- checkDecl (DeclTypeAlias StellaIdent Type)
 -- checkDecl (DeclExceptionType Type)
 -- checkDecl (DeclExceptionVariant StellaIdent Type)
-checkDecl d = todo $ "checkDecl " ++ show d
+checkDecl _ d = todo $ "checkDecl " ++ show d
 
 doCheck :: Program -> CheckerMonad ()
 doCheck (AProgram _ _ decls) = do
-	forM_ decls scrapDecl
+	forM_ decls $ scrapDecl ""
 	gd <- gets globalNames
 	case Map.lookup "main" gd of
 		Just (TFn [_] _) -> pure ()
+		Just (TFn _ _) -> throwError $ ErrorData ERROR_INCORRECT_ARITY_OF_MAIN []
 		_ -> throwError $ ErrorData ERROR_MISSING_MAIN []
-	forM_ decls checkDecl
+	forM_ decls $ void . checkDecl ""
 
 check :: Program -> [ErrorData]
 check p = either (:[]) (const []) $ runExcept $ evalStateT (unCheckerMonad $ doCheck p) emptyCheckerState

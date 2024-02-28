@@ -54,6 +54,7 @@ library:
       - TupleSections
       - GeneralizedNewtypeDeriving
       - RecordWildCards
+      - BangPatterns
 
 executables:
   stella-exe:
