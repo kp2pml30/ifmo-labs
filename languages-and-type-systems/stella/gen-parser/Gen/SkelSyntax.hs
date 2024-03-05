@@ -108,6 +108,7 @@ transExprData x = case x of
 
 transPattern :: Gen.AbsSyntax.Pattern -> Result
 transPattern x = case x of
+  Gen.AbsSyntax.PatternAsc pattern_ type_ -> failure x
   Gen.AbsSyntax.PatternVariant stellaident patterndata -> failure x
   Gen.AbsSyntax.PatternInl pattern_ -> failure x
   Gen.AbsSyntax.PatternInr pattern_ -> failure x

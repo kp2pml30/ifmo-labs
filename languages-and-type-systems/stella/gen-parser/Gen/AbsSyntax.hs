@@ -2,7 +2,7 @@
 
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 
--- | The abstract syntax of language Syntax.
+-- | The abstract syntax of language Syntax (1).
 
 module Gen.AbsSyntax where
 
@@ -73,7 +73,8 @@ data ExprData = NoExprData | SomeExprData Expr
   deriving (C.Eq, C.Ord, C.Show, C.Read)
 
 data Pattern
-    = PatternVariant StellaIdent PatternData
+    = PatternAsc Pattern Type
+    | PatternVariant StellaIdent PatternData
     | PatternInl Pattern
     | PatternInr Pattern
     | PatternTuple [Pattern]
@@ -165,6 +166,9 @@ data RecordFieldType = ARecordFieldType StellaIdent Type
 
 data Typing = ATyping Expr Type
   deriving (C.Eq, C.Ord, C.Show, C.Read)
+
+patternCons :: Pattern -> Pattern -> Pattern
+patternCons = \ h t -> PatternCons h t
 
 newtype StellaIdent = StellaIdent String
   deriving (C.Eq, C.Ord, C.Show, C.Read, Data.String.IsString)

@@ -325,13 +325,15 @@ ExprData
 
 Pattern :: { Gen.AbsSyntax.Pattern }
 Pattern
-  : '<|' StellaIdent PatternData '|>' { Gen.AbsSyntax.PatternVariant $2 $3 }
+  : Pattern 'as' Type { Gen.AbsSyntax.PatternAsc $1 $3 }
+  | '<|' StellaIdent PatternData '|>' { Gen.AbsSyntax.PatternVariant $2 $3 }
   | 'inl' '(' Pattern ')' { Gen.AbsSyntax.PatternInl $3 }
   | 'inr' '(' Pattern ')' { Gen.AbsSyntax.PatternInr $3 }
   | '{' ListPattern '}' { Gen.AbsSyntax.PatternTuple $2 }
   | '{' ListLabelledPattern '}' { Gen.AbsSyntax.PatternRecord $2 }
   | '[' ListPattern ']' { Gen.AbsSyntax.PatternList $2 }
-  | '(' Pattern ',' Pattern ')' { Gen.AbsSyntax.PatternCons $2 $4 }
+  | 'cons' '(' Pattern ',' Pattern ')' { Gen.AbsSyntax.PatternCons $3 $5 }
+  | '(' Pattern ',' Pattern ')' { Gen.AbsSyntax.patternCons $2 $4 }
   | 'false' { Gen.AbsSyntax.PatternFalse }
   | 'true' { Gen.AbsSyntax.PatternTrue }
   | 'unit' { Gen.AbsSyntax.PatternUnit }

@@ -21,13 +21,14 @@ ghc-options:
 - -Wpartial-fields
 - -Wredundant-constraints
 - -Wno-tabs
+- -Wno-name-shadowing
 - -Werror=incomplete-patterns
 
 internal-libraries:
   stella-parser:
-    #extra-deps:
-    #  - alex
-    #  - happy
+    build-tools:
+      - alex
+      - happy
     source-dirs: gen-parser
     #extra-source-files:
     #  - src/Gen/LexSyntax.x

@@ -267,13 +267,14 @@ instance Print Gen.AbsSyntax.ExprData where
 
 instance Print Gen.AbsSyntax.Pattern where
   prt i = \case
+    Gen.AbsSyntax.PatternAsc pattern_ type_ -> prPrec i 0 (concatD [prt 0 pattern_, doc (showString "as"), prt 0 type_])
     Gen.AbsSyntax.PatternVariant stellaident patterndata -> prPrec i 0 (concatD [doc (showString "<|"), prt 0 stellaident, prt 0 patterndata, doc (showString "|>")])
     Gen.AbsSyntax.PatternInl pattern_ -> prPrec i 0 (concatD [doc (showString "inl"), doc (showString "("), prt 0 pattern_, doc (showString ")")])
     Gen.AbsSyntax.PatternInr pattern_ -> prPrec i 0 (concatD [doc (showString "inr"), doc (showString "("), prt 0 pattern_, doc (showString ")")])
     Gen.AbsSyntax.PatternTuple patterns -> prPrec i 0 (concatD [doc (showString "{"), prt 0 patterns, doc (showString "}")])
     Gen.AbsSyntax.PatternRecord labelledpatterns -> prPrec i 0 (concatD [doc (showString "{"), prt 0 labelledpatterns, doc (showString "}")])
     Gen.AbsSyntax.PatternList patterns -> prPrec i 0 (concatD [doc (showString "["), prt 0 patterns, doc (showString "]")])
-    Gen.AbsSyntax.PatternCons pattern_1 pattern_2 -> prPrec i 0 (concatD [doc (showString "("), prt 0 pattern_1, doc (showString ","), prt 0 pattern_2, doc (showString ")")])
+    Gen.AbsSyntax.PatternCons pattern_1 pattern_2 -> prPrec i 0 (concatD [doc (showString "cons"), doc (showString "("), prt 0 pattern_1, doc (showString ","), prt 0 pattern_2, doc (showString ")")])
     Gen.AbsSyntax.PatternFalse -> prPrec i 0 (concatD [doc (showString "false")])
     Gen.AbsSyntax.PatternTrue -> prPrec i 0 (concatD [doc (showString "true")])
     Gen.AbsSyntax.PatternUnit -> prPrec i 0 (concatD [doc (showString "unit")])
