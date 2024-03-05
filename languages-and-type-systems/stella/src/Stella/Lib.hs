@@ -76,10 +76,6 @@ typeCtorId (TSum _ _) = 8
 typeCtorId (TVariant _) = 9
 typeCtorId TUnit1 = 10
 
-isVarType :: TType -> Bool
-isVarType (TVar _) = True
-isVarType _ = False
-
 newtype CheckerMonad a
   = CheckerMonad { unCheckerMonad :: StateT CheckerState (Except ErrorData) a }
   deriving newtype (Functor, Applicative, Monad, MonadError ErrorData, MonadState CheckerState)
@@ -143,7 +139,7 @@ unconvType (TypeList t) = TList <$> unconvType t
 unconvType x = todo $ "unconvType " ++ show x
 
 scrapDecl :: String -> Decl -> CheckerMonad ()
-scrapDecl pref fn@(DeclFun annots name params retType throwType decls expr) = do
+scrapDecl pref fn@(DeclFun annots name params retType throwType _decls _expr) = do
 	oldNames <- gets globalNames
 	let realName = pref ++ unident name
 	when (realName `Map.member` oldNames) $ do
@@ -231,14 +227,14 @@ getActualType (TVariant mp) = do
 getActualType a = pure a
 
 hasVar :: TType -> Bool
-hasVar (TVar t) = True
+hasVar (TVar _) = True
 hasVar (TTuple sub) = any hasVar sub
 hasVar (TFn args ret) = hasVar ret || any hasVar args
 hasVar (TList el) = hasVar el
 hasVar (TRecord mp) = any hasVar $ snd <$> Map.toList mp
 hasVar (TSum l r) = hasVar l || hasVar r
 hasVar (TVariant mp) = any hasVar $ snd <$> Map.toList mp
-hasVar a = False
+hasVar _ = False
 
 unify :: TType -> TType -> CheckerMonad TType
 unify x y | x == y = pure x
@@ -267,9 +263,9 @@ unify (TVar x) (TVar y) = do
 			let res = (Left $ a ++ b)
 			modify $ \s -> s { typeVars = DisjointSet.union x' y' tv, knownVars = Map.insert x' res (Map.insert y' res (knownVars s)) }
 			pure $ TVar x'
-		(Just (Left a), Just (Right b)) ->
+		(Just (Left _), Just (Right b)) ->
 			unifyVarWith False x b
-		(Just (Right a), Just (Left b)) -> do
+		(Just (Right a), Just (Left _)) -> do
 			unifyVarWith True y a
 unify (TVar x) y = unifyVarWith False x y
 unify x (TVar y) = unifyVarWith True y x
@@ -307,11 +303,6 @@ unify (TVariant x) (TVariant y) = do
 		void $ unify (x Map.! n) v
 	pure (TVariant x)
 unify x y = todo $ "unify " ++ show x ++ " vs " ++ show y
-
-patternFromExprType :: Pattern -> TType -> CheckerMonad (Map.Map String TType)
-patternFromExprType (PatternVar v) typ = do
-	pure $ Map.fromList [(unident v, typ)]
-patternFromExprType x t = todo $ "patternFromExprType " ++ show x ++ " " ++ show t
 
 data CoveredCases
 	= CoveredTrue
@@ -417,7 +408,6 @@ checkMatch scruType PatternUnit = do
 	unifyInMatch TUnit scruType
 	pure CoveredAll
 checkMatch scruType (PatternVariant i NoPatternData) = do
-	st <- getActualType scruType
 	unifyInMatch scruType (TVariant $ Map.fromList [(unident i, TUnit1)]) `catchError` \(ErrorData _ ctx) ->
 		throwError $ ErrorData ERROR_UNEXPECTED_NULLARY_VARIANT_PATTERN ctx
 	pure $ CoveredVariant $ Map.fromList [(unident i, CoveredAll)]
@@ -441,7 +431,7 @@ checkMatch scruType pat@(PatternSucc _) = do
 		spinPatNat n (PatternVar vn) = do
 			modify $ \s -> s { locals = Map.insert (unident vn) TNat (locals s) }
 			pure $ CoveredNat Set.empty $ Just n
-		spinPatNat _ pt = todo $ "spinPatNat " ++ show pat
+		spinPatNat _ _ = todo $ "spinPatNat " ++ show pat
 checkMatch scruType (PatternTuple pats) = do
 	patTup <- forM pats $ \_ -> freshVar
 	unifyInMatch scruType $ TTuple patTup
@@ -465,7 +455,11 @@ checkMatch scruType (PatternList lst) = do
 			pure $ CoveredList False he b)
 		(pure $ CoveredList True CoveredNone CoveredNone)
 		lst
-checkMatch _ pat = todo $ "checkMatch " ++ show pat
+checkMatch scruType (PatternAsc pat t) = do
+	t <- unconvType t
+	unifyInMatch scruType t
+	checkMatch scruType pat
+-- checkMatch _ pat = todo $ "checkMatch " ++ show pat
 
 checkTotality :: TType -> CoveredCases -> CheckerMonad ()
 checkTotality _ CoveredAll = pure ()
@@ -503,23 +497,47 @@ checkExpr expType (If c t f) = do
 	checkExpr TBool c
 	checkExpr expType t
 	checkExpr expType f
-checkExpr expType app@(Application f args) = do
+checkExpr expType (Application f args) = do
 	argTypes <- forM args (const freshVar)
 	checkExpr (TFn argTypes expType) f `catchError` \case
 		ErrorData ERROR_UNEXPECTED_NUMBER_OF_PARAMETERS_IN_LAMBDA ctx -> throwError $ ErrorData ERROR_INCORRECT_NUMBER_OF_ARGUMENTS ctx
 		x -> throwError x
 	forM_ (zip argTypes args) (uncurry checkExpr)
 checkExpr expType (Let bindings inExpr) = do
-	newVars <- forM bindings $ \(APatternBinding pat exp) -> do
-		fv <- freshVar
-		checkExpr fv exp
-		patternFromExprType pat fv
 	scoped $ do
-		modify $ \s -> s { locals = List.foldl' Map.union (locals s) newVars }
+		forM_ bindings $ \(APatternBinding pat exp) -> do
+			fv <- freshVar
+			checkExpr fv exp
+			r <- checkMatch fv pat
+			real <- getActualType fv
+			let
+				startCov =
+					case real of
+						TVariant v -> CoveredVariant $ const CoveredNone <$> v
+						_ -> CoveredNone
+			r <- (startCov `mergeCoveredCases` r) >>= mergeCoveredCases r
+			checkTotality fv r `catchError` \(ErrorData _ ctx) -> throwError $ ErrorData ERROR_NONEXHAUSTIVE_LET_PATTERNS ctx
+		checkExpr expType inExpr
+checkExpr expType (LetRec bindings inExpr) = do
+	scoped $ do
+		fvs <- forM bindings $ \(APatternBinding pat _exp) -> do
+			fv <- freshVar
+			r <- checkMatch fv pat
+			real <- getActualType fv
+			let
+				startCov =
+					case real of
+						TVariant v -> CoveredVariant $ const CoveredNone <$> v
+						_ -> CoveredNone
+			r <- (startCov `mergeCoveredCases` r) >>= mergeCoveredCases r
+			checkTotality fv r `catchError` \(ErrorData _ ctx) -> throwError $ ErrorData ERROR_NONEXHAUSTIVE_LET_PATTERNS ctx
+			pure fv
+		forM_ (zip fvs bindings) $ \(fv, APatternBinding _ exp) -> do
+			checkExpr fv exp
 		checkExpr expType inExpr
 checkExpr expType l@(List []) = do
 	tVar <- freshVar
-	res <- unify expType (TList tVar)
+	void $ unify expType (TList tVar)
 	getActualType tVar >>= \a -> when (hasVar a) $ throwError $ ErrorData ERROR_AMBIGUOUS_LIST [("list", show l)]
 checkExpr expType (List all) = do
 	tVar <- freshVar
@@ -572,7 +590,7 @@ checkExpr expType p@(DotRecord r i) = do
 				Nothing -> throwError $ ErrorData ERROR_UNEXPECTED_FIELD_ACCESS [("at", show p)]
 				Just a -> void $ unify expType a
 		_ -> throwError $ ErrorData ERROR_NOT_A_RECORD [("at", show p)]
-checkExpr expType ex@(Record binds) = do
+checkExpr expType (Record binds) = do
 	bindVars <- Map.fromList <$> forM binds (\(ABinding i _) -> (unident i,) <$> freshVar)
 	void $ unify expType (TRecord bindVars)
 	forM_ binds $ \(ABinding i e) -> do
@@ -602,18 +620,11 @@ checkExpr expType (Variant i (SomeExprData e)) = do
 	fv <- freshVar
 	checkExpr fv e
 	void (unify expType (TVariant $ Map.fromList [(unident i, fv)]))
-	-- prnt <- getActualType fv
-	--let !_ = unsafePerformIO $ putStrLn $ show fv ++ " <- " ++ show prnt ++ " exp " ++ show expType
-	--void (unify expType (TVariant $ Map.fromList [(unident i, fv)])) `catchError` \(ErrorData err ctx) -> do
-	--	when (err == )
-	--	throwError $ ErrorData ERROR_UNEXPECTED_DATA_FOR_NULLARY_LABEL ctx
 checkExpr expType (Fix e) =
 	checkExpr (TFn [expType] expType) e
 checkExpr expType (Match scrutinee cases) = do
 	fv <- freshVar
 	checkExpr fv scrutinee
-	real <- getActualType fv
-	let !_ = unsafePerformIO $ print real
 	let cm = checkMatch fv
 	let
 		ff a (AMatchCase p e) = do
@@ -621,19 +632,17 @@ checkExpr expType (Match scrutinee cases) = do
 				b <- cm p
 				checkExpr expType e
 				mergeCoveredCases a b
+	real <- getActualType fv
 	let
 		startCov =
 			case real of
 				TVariant v -> CoveredVariant $ const CoveredNone <$> v
 				_ -> CoveredNone
 	covRes <- foldM ff startCov cases
-	let !_ = unsafePerformIO $ print covRes
 	covRes <- covRes `mergeCoveredCases` covRes
-	let !_ = unsafePerformIO $ print covRes
 	checkTotality fv covRes
 checkExpr expType x = todo $ "checkExpr " ++ show x ++ " expected " ++ show expType
 -- checkExpr (Assign Expr Expr)
--- checkExpr (LetRec [PatternBinding] Expr)
 -- checkExpr (TypeAbstraction [StellaIdent] Expr)
 -- checkExpr (LessThan Expr Expr)
 -- checkExpr (LessThanOrEqual Expr Expr)
